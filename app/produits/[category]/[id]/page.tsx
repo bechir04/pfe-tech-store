@@ -237,7 +237,7 @@ export default function ProductDetail({ params }: ProductDetailParams) {
         <div>
           <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
           <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-4">
-            {product.price.toFixed(2)}€
+            {product.price.toFixed(3)} TND
           </div>
           
           <p className="text-gray-600 dark:text-gray-300 mb-6">
@@ -409,7 +409,7 @@ export default function ProductDetail({ params }: ProductDetailParams) {
                   </Link>
                   
                   <p className="text-blue-600 dark:text-blue-400 font-bold">
-                    {item.price.toFixed(2)}€
+                    {item.price.toFixed(3)} TND
                   </p>
                 </div>
               </div>

@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import ProductGrid from "./components/ProductGrid";
 
-// Données de démo pour les produits en vedette
 const featuredProducts = [
   {
     id: "001",
@@ -98,6 +97,10 @@ export default function Home() {
               <path fillRule="evenodd" d="M10.293 5.293a1 1 0 011.414 0l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414-1.414L12.586 11H5a1 1 0 110-2h7.586l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
             </svg>
           </Link>
+          <div className="flex gap-4 mt-6">
+            <Link href="/auth/login" className="bg-cyan-600 hover:bg-cyan-700 text-white font-semibold py-2 px-5 rounded-full shadow transition-all">Se connecter</Link>
+            <Link href="/auth/signup" className="bg-gray-800 hover:bg-gray-900 text-cyan-400 font-semibold py-2 px-5 rounded-full border border-cyan-600 shadow transition-all">Créer un compte</Link>
+          </div>
         </div>
       </section>
 

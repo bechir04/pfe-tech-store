@@ -3,9 +3,11 @@
 import React from 'react';
 import Link from 'next/link';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 
 const Header = () => {
   const { getTotalItems } = useCart();
+  const { user, logout } = useAuth();
   
   return (
     <header className="bg-gray-900 text-white py-4 shadow-md">
@@ -35,9 +37,15 @@ const Header = () => {
             <Link href="/produits/ordinateurs" className="text-gray-300 hover:text-white">
               PC & Composants
             </Link>
+            <Link href="/marketplace" className="text-gray-300 hover:text-white">
+              Marketplace
+            </Link>
           </nav>
           
           <div className="flex items-center space-x-4">
+            <Link href="/marketplace/post" className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-full text-sm font-semibold transition">
+              Vendre un article
+            </Link>
             <Link href="/panier" className="relative p-2">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
@@ -48,7 +56,22 @@ const Header = () => {
                 </span>
               )}
             </Link>
-            
+            {user ? (
+              <div className="flex items-center space-x-2">
+                <span className="font-semibold text-cyan-400">{user.name}</span>
+                <button
+                  onClick={logout}
+                  className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-full text-sm font-semibold transition"
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <>
+                <Link href="/auth/login" className="text-cyan-400 hover:underline font-semibold">Login</Link>
+                <Link href="/auth/signup" className="text-cyan-400 hover:underline font-semibold">Sign Up</Link>
+              </>
+            )}
             <button className="md:hidden" aria-label="Menu">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />

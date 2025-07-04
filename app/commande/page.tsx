@@ -17,7 +17,6 @@ const PayPalButton = ({ amount, onSuccess, onError, onCancel }: {
 
   const handlePayment = () => {
     setIsLoading(true);
-    // Simuler le traitement d'un paiement
     setTimeout(() => {
       setIsLoading(false);
       onSuccess();
@@ -47,7 +46,7 @@ const PayPalButton = ({ amount, onSuccess, onError, onCancel }: {
             height={20} 
             className="mr-2"
           />
-          Payer {amount.toFixed(2)}€
+          Payer {amount.toFixed(3)} TND
         </>
       )}
     </button>
@@ -103,7 +102,6 @@ export default function CheckoutPage() {
       [name]: value
     }));
     
-    // Effacer l'erreur lors de la saisie
     if (formErrors[name]) {
       setFormErrors(prevErrors => ({
         ...prevErrors,
@@ -122,7 +120,6 @@ export default function CheckoutPage() {
   };
 
   const handlePaymentSuccess = () => {
-    // Enregistrer la commande (dans un vrai projet, on enverrait au backend)
     const orderData = {
       items: cartItems,
       totalAmount: getTotalPrice(),
@@ -132,7 +129,6 @@ export default function CheckoutPage() {
       orderNumber: 'ORD-' + Math.floor(100000 + Math.random() * 900000)
     };
     
-    // Stocker temporairement pour afficher la confirmation
     localStorage.setItem('lastOrder', JSON.stringify(orderData));
     
     // Vider le panier
@@ -191,7 +187,7 @@ export default function CheckoutPage() {
               </div>
             </div>
             <div className="text-blue-600 dark:text-blue-400 font-bold">
-              {(item.price * item.quantity).toFixed(2)}€
+              {(item.price * item.quantity).toFixed(3)} TND
             </div>
           </div>
         ))}
@@ -200,7 +196,7 @@ export default function CheckoutPage() {
       <div className="p-6">
         <div className="flex justify-between mb-2">
           <span>Sous-total</span>
-          <span>{getTotalPrice().toFixed(2)}€</span>
+          <span>{getTotalPrice().toFixed(3)} TND</span>
         </div>
         <div className="flex justify-between mb-2">
           <span>Frais de livraison</span>
@@ -208,7 +204,7 @@ export default function CheckoutPage() {
         </div>
         <div className="flex justify-between font-bold text-lg pt-3 border-t border-gray-200 dark:border-gray-700">
           <span>Total</span>
-          <span>{getTotalPrice().toFixed(2)}€</span>
+          <span>{getTotalPrice().toFixed(3)} TND</span>
         </div>
       </div>
     </div>

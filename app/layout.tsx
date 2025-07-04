@@ -21,6 +21,7 @@ export const metadata: Metadata = {
 
 // Import du ClientLayout à partir d'un fichier séparé
 import ClientLayout from './client-layout';
+import { AuthProvider } from './context/AuthContext';
 
 // Composant principal de layout (côté serveur)
 export default function RootLayout({
@@ -33,9 +34,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen flex flex-col`}
       >
-        <ClientLayout>
-          {children}
-        </ClientLayout>
+        <AuthProvider>
+          <ClientLayout>
+            {children}
+          </ClientLayout>
+        </AuthProvider>
       </body>
     </html>
   );

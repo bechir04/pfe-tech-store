@@ -93,7 +93,7 @@ export default function CartPage() {
                         </div>
                         
                         <div className="text-blue-600 dark:text-blue-400 font-bold">
-                          {item.price.toFixed(2)}€
+                          {item.price.toFixed(3)} TND
                         </div>
                       </div>
                       
@@ -142,13 +142,13 @@ export default function CartPage() {
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span>Sous-total</span>
-                    <span>{getTotalPrice().toFixed(2)}€</span>
+                    <span>{getTotalPrice().toFixed(3)} TND</span>
                   </div>
                   
                   {discount > 0 && (
                     <div className="flex justify-between text-green-600 dark:text-green-400">
                       <span>Remise</span>
-                      <span>-{discount.toFixed(2)}€</span>
+                      <span>-{discount.toFixed(3)} TND</span>
                     </div>
                   )}
                   
@@ -160,7 +160,7 @@ export default function CartPage() {
                   <div className="border-t border-gray-200 dark:border-gray-700 pt-3 mt-3">
                     <div className="flex justify-between font-bold text-lg">
                       <span>Total</span>
-                      <span>{(getTotalPrice() - discount).toFixed(2)}€</span>
+                      <span>{(getTotalPrice() - discount).toFixed(3)} TND</span>
                     </div>
                     <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
                       TVA incluse
