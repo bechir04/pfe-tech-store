@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
+import React, { use } from 'react';
 
 // Mock data for user products
 const userProducts = [
@@ -22,7 +23,9 @@ const userProducts = [
 ];
 
 export default function UserProductDetailPage({ params }: { params: { id: string } }) {
-  const product = userProducts.find((p) => p.id === params.id);
+  // Unwrap params if it's a Promise (Next.js future-proofing)
+  const actualParams = typeof params.then === 'function' ? use(params) : params;
+  const product = userProducts.find((p) => p.id === actualParams.id);
   if (!product) return notFound();
 
   return (

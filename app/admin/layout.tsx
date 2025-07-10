@@ -1,40 +1,57 @@
-import Link from 'next/link';
-import React from 'react';
+"use client";
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="min-h-screen bg-gray-900 text-gray-100 flex">
-      <aside className="w-64 bg-gray-950 p-6 flex-shrink-0 border-r border-gray-800">
-        <div className="mb-10">
-          <Link href="/admin/dashboard">
-            <h2 className="text-2xl font-bold text-cyan-400">Admin Panel</h2>
-          </Link>
+import React, { useEffect } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import { AdminAuthProvider, useAdminAuth } from '../context/AdminAuthContext';
+
+function AdminLayoutContent({ children }: { children: React.ReactNode }) {
+  const { adminUser, isLoading } = useAdminAuth();
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    // Don't redirect if we're already on the login page
+    if (!isLoading && !adminUser?.isAuthenticated && pathname !== '/admin/login') {
+      router.push('/admin/login');
+    }
+  }, [adminUser, isLoading, router, pathname]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto mb-4"></div>
+          <p className="text-gray-400">Chargement...</p>
         </div>
-        <nav className="space-y-4">
-          <Link href="/admin/dashboard" className="flex items-center p-3 rounded-lg hover:bg-cyan-800 transition-colors">
-            Dashboard
-          </Link>
-          <Link href="/admin/products" className="flex items-center p-3 rounded-lg hover:bg-cyan-800 transition-colors">
-            Produits
-          </Link>
-          <Link href="/admin/categories" className="flex items-center p-3 rounded-lg hover:bg-cyan-800 transition-colors">
-            Catégories
-          </Link>
-          <Link href="/admin/orders" className="flex items-center p-3 rounded-lg hover:bg-cyan-800 transition-colors">
-            Commandes
-          </Link>
-          <Link href="/admin/payments" className="flex items-center p-3 rounded-lg hover:bg-cyan-800 transition-colors">
-            Paiements
-          </Link>
-        </nav>
-      </aside>
-      <main className="flex-1 p-8 overflow-auto">
-        {children}
-      </main>
+      </div>
+    );
+  }
+
+  // If not authenticated and not on login page, show loading (will redirect)
+  if (!adminUser?.isAuthenticated && pathname !== '/admin/login') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mx-auto mb-4"></div>
+          <p className="text-gray-400">Redirection...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      {children}
     </div>
+  );
+}
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <AdminAuthProvider>
+      <AdminLayoutContent>
+        {children}
+      </AdminLayoutContent>
+    </AdminAuthProvider>
   );
 } 

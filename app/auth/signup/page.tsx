@@ -2,15 +2,17 @@
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "../../context/AuthContext";
+import { getAuth, createUserWithEmailAndPassword, sendEmailVerification, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { app } from "../../firebaseConfig";
 
 export default function SignupPage() {
-  const { signup } = useAuth();
+  console.log("SignupPage");
   const router = useRouter();
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const auth = getAuth(app);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.id]: e.target.value });
@@ -21,13 +23,32 @@ export default function SignupPage() {
     setError("");
     setSuccess("");
     setLoading(true);
-    const res = await signup(form);
-    setLoading(false);
-    if (res.success) {
-      setSuccess(res.message);
-      setTimeout(() => router.push("/"), 1000);
-    } else {
-      setError(res.message);
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, form.email, form.password);
+      await sendEmailVerification(userCredential.user);
+      setSuccess("Compte créé ! Un email de confirmation a été envoyé. Veuillez vérifier votre boîte mail avant de vous connecter.");
+      setLoading(false);
+    } catch (err: any) {
+      setError(err.message);
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignup = async () => {
+    console.log("handleGoogleSignup");
+    setError("");
+    setSuccess("");
+    setLoading(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      console.log(provider);
+      await signInWithPopup(auth, provider);
+      setSuccess("Inscription avec Google réussie !");
+      setLoading(false);
+      router.push("/");
+    } catch (err: any) {
+      setError(err.message);
+      setLoading(false);
     }
   };
 
@@ -58,6 +79,14 @@ export default function SignupPage() {
             {loading ? "Création..." : "Sign Up"}
           </button>
         </form>
+        <button
+          onClick={handleGoogleSignup}
+          className="w-full mt-2 rounded-full bg-white text-gray-900 font-semibold shadow-md px-6 py-2 transition-all duration-200 flex items-center gap-2 border border-gray-300 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 active:scale-95"
+          disabled={loading}
+        >
+          <svg className="h-5 w-5 mr-2" viewBox="0 0 48 48"><g><path d="M44.5 20H24v8.5h11.7C34.7 33.1 29.8 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c2.7 0 5.2.9 7.2 2.4l6.4-6.4C34.2 5.1 29.4 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21c10.5 0 19.5-7.6 21-17.5 0-.7-.1-1.3-.1-2z" fill="#FFC107"/><path d="M6.3 14.7l7 5.1C15.5 16.1 19.4 13 24 13c2.7 0 5.2.9 7.2 2.4l6.4-6.4C34.2 5.1 29.4 3 24 3c-7.2 0-13.4 3.1-17.7 8z" fill="#FF3D00"/><path d="M24 45c5.4 0 10.2-1.8 14-4.9l-6.5-5.3C29.7 36.7 26.9 37.5 24 37.5c-5.7 0-10.6-3.7-12.3-8.8l-7 5.4C7.9 41.2 15.4 45 24 45z" fill="#4CAF50"/><path d="M44.5 20H24v8.5h11.7c-1.1 3.1-4.2 5.5-7.7 5.5-2.2 0-4.2-.7-5.7-2.1l-7 5.4C15.4 41.2 19.4 43 24 43c10.5 0 19.5-7.6 21-17.5 0-.7-.1-1.3-.1-2z" fill="#1976D2"/></g></svg>
+          {loading ? "Connexion..." : "Sign Up with Google"}
+        </button>
         <div className="flex justify-between items-center mt-4 text-sm">
           <Link href="/auth/login" className="text-cyan-400 hover:underline">Already have an account? Login</Link>
           <Link href="/" className="text-gray-400 hover:underline">Home</Link>

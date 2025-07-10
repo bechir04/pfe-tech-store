@@ -1,16 +1,19 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, User as FirebaseUser } from 'firebase/auth';
+import { app } from '../firebaseConfig';
 
 export type User = {
   name: string;
   email: string;
-  password: string;
+  photoURL?: string;
+  uid: string;
 };
 
 interface AuthContextType {
   user: User | null;
-  signup: (user: User) => Promise<{ success: boolean; message: string }>;
+  signup: (user: { name: string; email: string; password: string }) => Promise<{ success: boolean; message: string }>;
   login: (email: string, password: string) => Promise<{ success: boolean; message: string }>;
   logout: () => void;
 }
@@ -21,38 +24,48 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('loggedInUser');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    const auth = getAuth(app);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        setUser({
+          name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'Utilisateur',
+          email: firebaseUser.email || '',
+          photoURL: firebaseUser.photoURL || undefined,
+          uid: firebaseUser.uid,
+        });
+      } else {
+        setUser(null);
+      }
+    });
+    return () => unsubscribe();
   }, []);
 
-  const signup = async (newUser: User) => {
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    if (users.find((u: User) => u.email === newUser.email)) {
-      return { success: false, message: 'Email déjà utilisé.' };
+  const signup = async ({ name, email, password }: { name: string; email: string; password: string }) => {
+    try {
+      const auth = getAuth(app);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      if (auth.currentUser) {
+        await updateProfile(auth.currentUser, { displayName: name });
+      }
+      return { success: true, message: 'Compte créé avec succès.' };
+    } catch (error: any) {
+      return { success: false, message: error.message };
     }
-    users.push(newUser);
-    localStorage.setItem('users', JSON.stringify(users));
-    localStorage.setItem('loggedInUser', JSON.stringify(newUser));
-    setUser(newUser);
-    return { success: true, message: 'Compte créé avec succès.' };
   };
 
   const login = async (email: string, password: string) => {
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    const found = users.find((u: User) => u.email === email && u.password === password);
-    if (!found) {
-      return { success: false, message: 'Email ou mot de passe incorrect.' };
+    try {
+      const auth = getAuth(app);
+      await signInWithEmailAndPassword(auth, email, password);
+      return { success: true, message: 'Connexion réussie.' };
+    } catch (error: any) {
+      return { success: false, message: error.message };
     }
-    localStorage.setItem('loggedInUser', JSON.stringify(found));
-    setUser(found);
-    return { success: true, message: 'Connexion réussie.' };
   };
 
   const logout = () => {
-    localStorage.removeItem('loggedInUser');
-    setUser(null);
+    const auth = getAuth(app);
+    signOut(auth);
   };
 
   return (

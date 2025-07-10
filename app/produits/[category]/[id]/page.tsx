@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, use } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCart } from '../../../context/CartContext';
@@ -147,13 +147,15 @@ function getSimilarProducts(category: string, currentId: string) {
 }
 
 export default function ProductDetail({ params }: ProductDetailParams) {
+  // Unwrap params if it's a Promise (Next.js future-proofing)
+  const actualParams = typeof params.then === 'function' ? use(params) : params;
   const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState("");
   const [isAddedToCart, setIsAddedToCart] = useState(false);
   const { addToCart } = useCart();
   
   // Récupérer le produit à partir de l'ID
-  const product = getProductById(params.id);
+  const product = getProductById(actualParams.id);
   
   // Si le produit n'existe pas, renvoyer une page 404
   if (!product) {
@@ -161,12 +163,12 @@ export default function ProductDetail({ params }: ProductDetailParams) {
   }
   
   // Vérifier que le produit est bien dans la catégorie demandée
-  if (product.category !== params.category) {
+  if (product.category !== actualParams.category) {
     notFound();
   }
   
   // Produits similaires
-  const similarProducts = getSimilarProducts(params.category, params.id);
+  const similarProducts = getSimilarProducts(actualParams.category, actualParams.id);
 
   // Gérer l'ajout au panier
   const handleAddToCart = () => {
