@@ -4,10 +4,12 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../context/AuthContext';
 import Badge from '../components/Badge';
+import ProductGrid from '../components/ProductGrid';
 
 export default function ProfilePage() {
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
+  const [favoriteProducts, setFavoriteProducts] = useState([]);
 
   // Mock verification data (in a real app, this would come from your backend)
   const [verifications] = useState({
@@ -25,6 +27,50 @@ export default function ProfilePage() {
 
   const [earnedBadges] = useState(['verified']);
 
+  // Mock: Replace with your real product data source or API call
+  const allProducts = [
+    {
+      id: "001",
+      name: "Smartphone Galaxy Pro",
+      price: 799.99,
+      description: "Écran 6.5 pouces, processeur 8 coeurs, 128GB, caméra 108MP",
+      image: "https://images.unsplash.com/photo-1598327105666-5b89351aff97?q=80&w=2027&auto=format&fit=crop",
+      category: "telephones"
+    },
+    {
+      id: "002",
+      name: "Ultrabook Zenith X1",
+      price: 1299.99,
+      description: "Portable fin et léger, Core i7, 16GB RAM, SSD 512GB, écran 14\"",
+      image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?q=80&w=2071&auto=format&fit=crop",
+      category: "ordinateurs"
+    },
+    {
+      id: "003",
+      name: "Écouteurs Sans Fil Pulse",
+      price: 149.99,
+      description: "Réduction de bruit active, autonomie 30h, résistant à l'eau",
+      image: "https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?q=80&w=1978&auto=format&fit=crop",
+      category: "accessoires"
+    },
+    {
+      id: "004",
+      name: "Carte Graphique TurboVision",
+      price: 549.99,
+      description: "8GB GDDR6, ray tracing, ports HDMI 2.1, performance gaming",
+      image: "https://images.unsplash.com/photo-1591488320449-011701bb6704?q=80&w=2070&auto=format&fit=crop",
+      category: "ordinateurs"
+    }
+  ];
+
+  React.useEffect(() => {
+    if (activeTab === 'favorites') {
+      const favoriteIds = JSON.parse(localStorage.getItem('favoriteProducts') || '[]');
+      const favorites = allProducts.filter((product) => favoriteIds.includes(product.id));
+      setFavoriteProducts(favorites);
+    }
+  }, [activeTab]);
+
   if (!user) {
     return (
       <div className="max-w-4xl mx-auto py-10 px-4">
@@ -37,6 +83,7 @@ export default function ProfilePage() {
 
   const tabs = [
     { id: 'overview', label: 'Aperçu', icon: '📊' },
+    { id: 'favorites', label: 'Favoris', icon: '❤️' },
     { id: 'verification', label: 'Vérification', icon: '✅' },
     { id: 'orders', label: 'Commandes', icon: '📦' },
     { id: 'settings', label: 'Paramètres', icon: '⚙️' }
@@ -179,6 +226,18 @@ export default function ProfilePage() {
     </div>
   );
 
+  const renderFavorites = () => (
+    <div className="space-y-6">
+      <div className="bg-gray-900 rounded-lg p-6 border border-gray-800">
+        <h3 className="text-lg font-bold mb-4 text-gray-100">Mes produits favoris</h3>
+        <ProductGrid products={favoriteProducts} title="Produits que j'aime" />
+        {favoriteProducts.length === 0 && (
+          <p className="text-gray-400 mt-4">Vous n'avez pas encore ajouté de produits à vos favoris.</p>
+        )}
+      </div>
+    </div>
+  );
+
   const renderVerification = () => (
     <div className="space-y-6">
       <div className="bg-gray-900 rounded-lg p-6 border border-gray-800">
@@ -272,6 +331,8 @@ export default function ProfilePage() {
     switch (activeTab) {
       case 'overview':
         return renderOverview();
+      case 'favorites':
+        return renderFavorites();
       case 'verification':
         return renderVerification();
       case 'orders':

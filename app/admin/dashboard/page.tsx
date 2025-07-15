@@ -7,14 +7,14 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 // Mock user data and analytics data (static, outside component)
-const mockUsers = [
+const mockUsers: AdminUserType[] = [
   {
     id: 'u001',
     name: 'Jean Dupont',
     email: 'jean.dupont@email.com',
     registered: '2024-01-10',
-    status: 'active',
-    role: 'user',
+    status: 'active' as 'active',
+    role: 'user' as 'user',
     orders: 5,
     lastLogin: '2024-06-01',
   },
@@ -23,8 +23,8 @@ const mockUsers = [
     name: 'Marie Martin',
     email: 'marie.martin@email.com',
     registered: '2024-02-15',
-    status: 'banned',
-    role: 'user',
+    status: 'banned' as 'banned',
+    role: 'user' as 'user',
     orders: 2,
     lastLogin: '2024-05-28',
   },
@@ -33,8 +33,8 @@ const mockUsers = [
     name: 'Pierre Durand',
     email: 'pierre.durand@email.com',
     registered: '2024-03-05',
-    status: 'active',
-    role: 'seller',
+    status: 'active' as 'active',
+    role: 'seller' as 'seller',
     orders: 12,
     lastLogin: '2024-06-02',
   },
@@ -43,8 +43,8 @@ const mockUsers = [
     name: 'Admin Bechir',
     email: 'bechir@admin.com',
     registered: '2024-01-01',
-    status: 'active',
-    role: 'admin',
+    status: 'active' as 'active',
+    role: 'admin' as 'admin',
     orders: 0,
     lastLogin: '2024-06-03',
   },
@@ -79,23 +79,36 @@ const analyticsData = {
   }
 };
 
+// 1. Define User type for admin dashboard
+
+type AdminUserType = {
+  id: string;
+  name: string;
+  email: string;
+  registered: string;
+  status: 'active' | 'banned';
+  role: 'user' | 'seller' | 'admin';
+  orders: number;
+  lastLogin: string;
+};
+
 export default function AdminDashboard() {
   // All useState, useMemo, and logic go here!
   // User management state
-  const [users, setUsers] = useState(mockUsers);
+  const [users, setUsers] = useState<AdminUserType[]>(mockUsers);
   const [search, setSearch] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [filterRole, setFilterRole] = useState('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'banned'>('all');
+  const [filterRole, setFilterRole] = useState<'all' | 'user' | 'seller' | 'admin'>('all');
 const [currentPage, setCurrentPage] = useState(1);
-const [selectedUser, setSelectedUser] = useState(null);
+const [selectedUser, setSelectedUser] = useState<AdminUserType | null>(null);
 const [showUserModal, setShowUserModal] = useState(false);
 const USERS_PER_PAGE = 5;
 
 // Edit and reset password modal state (move to top)
-const [editUser, setEditUser] = useState(null);
+const [editUser, setEditUser] = useState<AdminUserType | null>(null);
 const [showEditModal, setShowEditModal] = useState(false);
-const [editForm, setEditForm] = useState({ name: '', email: '', role: 'user', status: 'active' });
-const [resetUser, setResetUser] = useState(null);
+const [editForm, setEditForm] = useState<{ name: string; email: string; role: 'user' | 'seller' | 'admin'; status: 'active' | 'banned' }>({ name: '', email: '', role: 'user', status: 'active' });
+const [resetUser, setResetUser] = useState<AdminUserType | null>(null);
 const [showResetModal, setShowResetModal] = useState(false);
 
 const filteredUsers = useMemo(() => {
@@ -115,44 +128,46 @@ const paginatedUsers = useMemo(() => {
 
 const totalPages = Math.ceil(filteredUsers.length / USERS_PER_PAGE);
 
-function handleBanUnban(user) {
+// 2. Add types to all handler parameters
+function handleBanUnban(user: AdminUserType) {
   setUsers(prev => prev.map(u => u.id === user.id ? { ...u, status: u.status === 'banned' ? 'active' : 'banned' } : u));
 }
-function handleDelete(user) {
+function handleDelete(user: AdminUserType) {
   setUsers(prev => prev.filter(u => u.id !== user.id));
   setNotification({ type: 'success', message: `Utilisateur ${user.name} supprimé.` });
 }
-function handleResetPassword(user) {
-  setNotification({ type: 'success', message: `Lien de réinitialisation envoyé à ${user.email}` });
-}
-function handleView(user) {
+function handleView(user: AdminUserType) {
   setSelectedUser(user);
   setShowUserModal(true);
 }
-function handleEdit(user) {
+function handleEdit(user: AdminUserType) {
   setEditUser(user);
   setEditForm({ name: user.name, email: user.email, role: user.role, status: user.status });
   setShowEditModal(true);
 }
-function handleEditSave(e) {
+function handleEditSave(e: React.FormEvent<HTMLFormElement>) {
   e.preventDefault();
+  if (!editUser) return;
   setUsers(prev => prev.map(u => u.id === editUser.id ? { ...u, ...editForm } : u));
   setShowEditModal(false);
   setNotification({ type: 'success', message: `Utilisateur ${editForm.name} modifié.` });
 }
-function handleEditChange(e) {
+function handleEditChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
   const { name, value } = e.target;
   setEditForm(f => ({ ...f, [name]: value }));
 }
-function handleResetPassword(user) {
+function handleResetPassword(user: AdminUserType) {
   setResetUser(user);
   setShowResetModal(true);
 }
 function handleResetConfirm() {
   setShowResetModal(false);
-  setNotification({ type: 'success', message: `Lien de réinitialisation envoyé à ${resetUser.email}` });
+  if (resetUser) {
+    setNotification({ type: 'success', message: `Lien de réinitialisation envoyé à ${resetUser.email}` });
+  }
 }
 
+// 3. Fix never/null errors in modals
 const renderUserModal = () => selectedUser && (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
     <div className="bg-gray-950 rounded-xl shadow-2xl border border-gray-800 w-full max-w-md p-8 relative animate-fade-in">
@@ -592,7 +607,7 @@ const renderUserModal = () => selectedUser && (
           <select
             className="px-3 py-2 rounded-lg bg-gray-800 text-gray-100 border border-gray-700 focus:outline-none"
             value={filterStatus}
-            onChange={e => { setFilterStatus(e.target.value); setCurrentPage(1); }}
+            onChange={e => { setFilterStatus(e.target.value as 'all' | 'active' | 'banned'); setCurrentPage(1); }}
           >
             <option value="all">Tous statuts</option>
             <option value="active">Actif</option>
@@ -601,7 +616,7 @@ const renderUserModal = () => selectedUser && (
           <select
             className="px-3 py-2 rounded-lg bg-gray-800 text-gray-100 border border-gray-700 focus:outline-none"
             value={filterRole}
-            onChange={e => { setFilterRole(e.target.value); setCurrentPage(1); }}
+            onChange={e => { setFilterRole(e.target.value as 'all' | 'user' | 'seller' | 'admin'); setCurrentPage(1); }}
           >
             <option value="all">Tous rôles</option>
             <option value="user">Utilisateur</option>
@@ -741,8 +756,9 @@ const renderUserModal = () => selectedUser && (
     doc.setFontSize(14);
     doc.text('Résumé des indicateurs clés', 14, 38);
     doc.setFontSize(11);
-    autoTable(doc, {
-      startY: 42,
+    let lastY = 42;
+    let table = autoTable(doc, {
+      startY: lastY,
       head: [['Revenus totaux', 'Commandes', 'Utilisateurs actifs', 'Taux de conversion']],
       body: [[
         '112,000€',
@@ -754,36 +770,39 @@ const renderUserModal = () => selectedUser && (
       styles: { fontSize: 11 },
       headStyles: { fillColor: [59, 130, 246] },
     });
+    lastY = (table as any).finalY || (table as any).lastAutoTable?.finalY || lastY + 20;
 
     // Sales Trend Table
     doc.setFontSize(14);
-    doc.text('Évolution des ventes', 14, doc.lastAutoTable.finalY + 10);
-    autoTable(doc, {
-      startY: doc.lastAutoTable.finalY + 14,
+    doc.text('Évolution des ventes', 14, lastY + 10);
+    table = autoTable(doc, {
+      startY: lastY + 14,
       head: [['Mois', 'Ventes (€)', 'Commandes']],
       body: analyticsData.salesData.map(d => [d.month, d.sales, d.orders]),
       theme: 'striped',
       styles: { fontSize: 11 },
       headStyles: { fillColor: [16, 185, 129] },
     });
+    lastY = (table as any).finalY || (table as any).lastAutoTable?.finalY || lastY + 20;
 
     // Category Breakdown
     doc.setFontSize(14);
-    doc.text('Répartition par catégorie', 14, doc.lastAutoTable.finalY + 10);
-    autoTable(doc, {
-      startY: doc.lastAutoTable.finalY + 14,
+    doc.text('Répartition par catégorie', 14, lastY + 10);
+    table = autoTable(doc, {
+      startY: lastY + 14,
       head: [['Catégorie', 'Part (%)']],
       body: analyticsData.categoryData.map(c => [c.category, c.sales]),
       theme: 'striped',
       styles: { fontSize: 11 },
       headStyles: { fillColor: [245, 158, 11] },
     });
+    lastY = (table as any).finalY || (table as any).lastAutoTable?.finalY || lastY + 20;
 
     // Top Products
     doc.setFontSize(14);
-    doc.text('Produits les plus vendus', 14, doc.lastAutoTable.finalY + 10);
-    autoTable(doc, {
-      startY: doc.lastAutoTable.finalY + 14,
+    doc.text('Produits les plus vendus', 14, lastY + 10);
+    table = autoTable(doc, {
+      startY: lastY + 14,
       head: [['Produit', 'Ventes', 'Revenus (€)', 'Performance (%)']],
       body: analyticsData.topProducts.map(p => [
         p.name,
@@ -795,12 +814,13 @@ const renderUserModal = () => selectedUser && (
       styles: { fontSize: 11 },
       headStyles: { fillColor: [59, 130, 246] },
     });
+    lastY = (table as any).finalY || (table as any).lastAutoTable?.finalY || lastY + 20;
 
     // User Metrics
     doc.setFontSize(14);
-    doc.text('Métriques utilisateurs', 14, doc.lastAutoTable.finalY + 10);
-    autoTable(doc, {
-      startY: doc.lastAutoTable.finalY + 14,
+    doc.text('Métriques utilisateurs', 14, lastY + 10);
+    table = autoTable(doc, {
+      startY: lastY + 14,
       head: [['Utilisateurs totaux', 'Utilisateurs actifs', 'Nouveaux utilisateurs', 'Taux de conversion']],
       body: [[
         analyticsData.userMetrics.totalUsers,
@@ -1235,4 +1255,4 @@ const renderUserModal = () => selectedUser && (
       </div>
     </div>
   );
-} 
+}

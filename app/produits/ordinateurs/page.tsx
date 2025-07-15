@@ -10,7 +10,7 @@ const ordinateurs = [
     name: "Ultrabook Zenith X1",
     price: 1299.99,
     description: "Portable fin et léger, Core i7, 16GB RAM, SSD 512GB, écran 14\"",
-    image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?q=80&w=2071&auto=format&fit=crop",
+    images: ["https://images.unsplash.com/photo-1496181133206-80ce9b88a853?q=80&w=2071&auto=format&fit=crop"],
     category: "ordinateurs"
   },
   {
@@ -18,7 +18,7 @@ const ordinateurs = [
     name: "Carte Graphique TurboVision",
     price: 549.99,
     description: "8GB GDDR6, ray tracing, ports HDMI 2.1, performance gaming",
-    image: "https://images.unsplash.com/photo-1591488320449-011701bb6704?q=80&w=2070&auto=format&fit=crop",
+    images: ["https://images.unsplash.com/photo-1591488320449-011701bb6704?q=80&w=2070&auto=format&fit=crop"],
     category: "ordinateurs"
   },
   {
@@ -26,7 +26,7 @@ const ordinateurs = [
     name: "Moniteur UltraWide 34\"",
     price: 499.99,
     description: "34 pouces incurvé, 3440x1440, 144Hz, temps de réponse 1ms",
-    image: "https://images.unsplash.com/photo-1527443195645-1133f7f28990?q=80&w=2070&auto=format&fit=crop",
+    images: ["https://images.unsplash.com/photo-1527443195645-1133f7f28990?q=80&w=2070&auto=format&fit=crop"],
     category: "ordinateurs"
   },
   {
@@ -34,7 +34,7 @@ const ordinateurs = [
     name: "PC Gamer TurboX",
     price: 1899.99,
     description: "Ryzen 9, RTX 4080, 32GB RAM, SSD 1TB, refroidissement liquide",
-    image: "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?q=80&w=2070&auto=format&fit=crop",
+    images: ["https://images.unsplash.com/photo-1587202372775-e229f172b9d7?q=80&w=2070&auto=format&fit=crop"],
     category: "ordinateurs"
   }
 ];

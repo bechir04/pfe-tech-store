@@ -11,11 +11,35 @@ const Header = () => {
   const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [carouselIndex, setCarouselIndex] = useState(0);
+  const [newProducts, setNewProducts] = useState<any[]>([]);
+  const [newFavoriteProducts, setNewFavoriteProducts] = useState<any[]>([]);
+  const [showNotif, setShowNotif] = useState(false);
 
   // Reset carousel index when user changes (so new features show immediately)
   useEffect(() => {
     setCarouselIndex(0);
   }, [user]);
+
+  useEffect(() => {
+    // For demo: check localStorage for new products from followed sellers
+    const notif = JSON.parse(localStorage.getItem('newProductsFromFollowed') || '[]');
+    setNewProducts(notif);
+    // Check for new favorite products
+    const favNotif = JSON.parse(localStorage.getItem('newFavoriteProducts') || '[]');
+    setNewFavoriteProducts(favNotif);
+  }, []);
+  const handleNotifClick = () => {
+    setShowNotif((v) => !v);
+    // Clear notifications when opened
+    if (newProducts.length > 0) {
+      localStorage.setItem('newProductsFromFollowed', '[]');
+      setNewProducts([]);
+    }
+    if (newFavoriteProducts.length > 0) {
+      localStorage.setItem('newFavoriteProducts', '[]');
+      setNewFavoriteProducts([]);
+    }
+  };
 
   // Split navLinks into always-visible and auth-only
   const alwaysVisibleLinks = [
@@ -26,9 +50,6 @@ const Header = () => {
   ];
   const authOnlyLinks = [
     { href: '/marketplace', label: 'Marketplace' },
-    { href: '/market-trends', label: 'Tendances' },
-    { href: '/trade', label: 'Échanges' },
-    { href: '/messages', label: 'Messages' },
     { href: '/dashboard/loyalty', label: 'Points & Badges' },
     { href: '/profile/verify', label: 'Vérification' },
   ];
@@ -108,6 +129,44 @@ const Header = () => {
                 </span>
               )}
             </Link>
+            {/* Notification Bell */}
+            <div className="relative">
+              <button onClick={handleNotifClick} className="p-2 rounded-full hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-cyan-400" aria-label="Notifications">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 7.165 6 9.388 6 12v2.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                </svg>
+                {(newProducts.length + newFavoriteProducts.length) > 0 && (
+                  <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{newProducts.length + newFavoriteProducts.length}</span>
+                )}
+              </button>
+              {showNotif && (newProducts.length > 0 || newFavoriteProducts.length > 0) && (
+                <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded shadow-lg z-50 p-4">
+                  <h4 className="font-bold mb-2 text-gray-900 dark:text-white">Notifications</h4>
+                  <ul className="space-y-2">
+                    {newProducts.length > 0 && (
+                      <li className="text-sm text-gray-800 dark:text-gray-200">
+                        <span className="font-semibold text-cyan-600 dark:text-cyan-400">Nouveaux articles de vos vendeurs suivis :</span>
+                        <ul className="list-disc ml-5 mt-1">
+                          {newProducts.map((prod, i) => (
+                            <li key={i}>{prod.name || prod}</li>
+                          ))}
+                        </ul>
+                      </li>
+                    )}
+                    {newFavoriteProducts.length > 0 && (
+                      <li className="text-sm text-gray-800 dark:text-gray-200">
+                        <span className="font-semibold text-pink-600 dark:text-pink-400">Nouveaux articles favoris :</span>
+                        <ul className="list-disc ml-5 mt-1">
+                          {newFavoriteProducts.map((prod, i) => (
+                            <li key={i}>{prod.name || prod.id}</li>
+                          ))}
+                        </ul>
+                      </li>
+                    )}
+                  </ul>
+                </div>
+              )}
+            </div>
             {user ? (
               <div className="flex items-center gap-2">
                 {/* Profile avatar */}

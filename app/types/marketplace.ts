@@ -15,9 +15,13 @@ export type Product = {
   name: string;
   description: string;
   price: number;
-  image: string;
+  images: string[]; // multiple images
+  videoUrl?: string;
   category: string;
   owner: User;
+  condition: 'new' | 'like new' | 'used' | 'refurbished';
+  warranty?: string;
+  specs?: { key: string; value: string }[];
   diagnostics?: ProductDiagnostics;
   priceHistory?: PriceHistoryEntry[];
   reviews?: Review[];

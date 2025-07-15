@@ -19,8 +19,12 @@ export default function PostArticlePage() {
     description: '',
     price: '',
     category: categories[0].id,
+    condition: 'new',
+    warranty: '',
+    video: '',
+    specs: [{ key: '', value: '' }],
   });
-  const [imageBase64, setImageBase64] = useState<string | null>(null);
+  const [images, setImages] = useState<string[]>([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -28,23 +32,34 @@ export default function PostArticlePage() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImageBase64(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleImagesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const readers = files.map(file => {
+      return new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(file);
+      });
+    });
+    Promise.all(readers).then(imgs => setImages(imgs));
   };
+
+  const handleSpecsChange = (idx: number, field: 'key' | 'value', value: string) => {
+    setForm(f => {
+      const specs = [...f.specs];
+      specs[idx][field] = value;
+      return { ...f, specs };
+    });
+  };
+  const addSpec = () => setForm(f => ({ ...f, specs: [...f.specs, { key: '', value: '' }] }));
+  const removeSpec = (idx: number) => setForm(f => ({ ...f, specs: f.specs.filter((_, i) => i !== idx) }));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    if (!form.name || !form.description || !form.price || !form.category || !imageBase64) {
-      setError('Veuillez remplir tous les champs et ajouter une image.');
+    if (!form.name || !form.description || !form.price || !form.category || images.length === 0) {
+      setError('Veuillez remplir tous les champs et ajouter au moins une image.');
       setLoading(false);
       return;
     }
@@ -53,9 +68,13 @@ export default function PostArticlePage() {
       name: form.name,
       description: form.description,
       price: parseFloat(form.price),
-      image: imageBase64,
+      images, // array of base64 strings
+      videoUrl: form.video,
+      condition: form.condition,
+      warranty: form.warranty,
+      specs: form.specs.filter(s => s.key && s.value),
       category: form.category,
-      user: user ? { name: user.name, email: user.email } : null,
+      owner: user ? { id: user.uid, name: user.name, email: user.email, isVerified: true } : null,
     };
     const articles = JSON.parse(localStorage.getItem('userArticles') || '[]');
     articles.push(article);
@@ -81,11 +100,42 @@ export default function PostArticlePage() {
           <input type="number" id="price" name="price" value={form.price} onChange={handleChange} required min="0" step="0.01" className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-700" />
         </div>
         <div>
-          <label className="block mb-1 font-medium" htmlFor="image">Image</label>
-          <input type="file" id="image" name="image" accept="image/*" onChange={handleFileChange} required className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-700" />
-          {imageBase64 && (
-            <img src={imageBase64} alt="Aperçu" className="mt-2 rounded-lg max-h-40 mx-auto" />
+          <label className="block mb-1 font-medium" htmlFor="images">Images (max 5)</label>
+          <input type="file" id="images" name="images" accept="image/*" multiple onChange={handleImagesChange} required className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-700" />
+          {images.length > 0 && (
+            <div className="flex gap-2 mt-2 flex-wrap">
+              {images.map((img, i) => (
+                <img key={i} src={img} alt={`Aperçu ${i+1}`} className="rounded-lg max-h-24 border" />
+              ))}
+            </div>
           )}
+        </div>
+        <div>
+          <label className="block mb-1 font-medium" htmlFor="video">Vidéo (YouTube ou fichier mp4)</label>
+          <input type="text" id="video" name="video" value={form.video} onChange={handleChange} placeholder="Lien YouTube ou mp4" className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-700" />
+        </div>
+        <div>
+          <label className="block mb-1 font-medium" htmlFor="condition">État</label>
+          <select id="condition" name="condition" value={form.condition} onChange={handleChange} className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-700">
+            <option value="new">Neuf</option>
+            <option value="used">Occasion</option>
+            <option value="refurbished">Reconditionné</option>
+          </select>
+        </div>
+        <div>
+          <label className="block mb-1 font-medium" htmlFor="warranty">Garantie</label>
+          <input type="text" id="warranty" name="warranty" value={form.warranty} onChange={handleChange} placeholder="Ex: 1 an, 6 mois..." className="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 bg-gray-100 dark:bg-gray-700" />
+        </div>
+        <div>
+          <label className="block mb-1 font-medium">Spécifications détaillées</label>
+          {form.specs.map((spec, idx) => (
+            <div key={idx} className="flex gap-2 mb-2">
+              <input type="text" placeholder="Clé (ex: RAM)" value={spec.key} onChange={e => handleSpecsChange(idx, 'key', e.target.value)} className="flex-1 px-2 py-1 rounded border border-gray-300 dark:border-gray-700" />
+              <input type="text" placeholder="Valeur (ex: 16GB)" value={spec.value} onChange={e => handleSpecsChange(idx, 'value', e.target.value)} className="flex-1 px-2 py-1 rounded border border-gray-300 dark:border-gray-700" />
+              <button type="button" onClick={() => removeSpec(idx)} className="text-red-500 font-bold">×</button>
+            </div>
+          ))}
+          <button type="button" onClick={addSpec} className="text-cyan-600 hover:underline text-sm">+ Ajouter une spécification</button>
         </div>
         <div>
           <label className="block mb-1 font-medium" htmlFor="category">Catégorie</label>

@@ -2,8 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import ProductGrid from "./components/ProductGrid";
-import { useAuth } from "./context/AuthContext";
+import ProductGrid from "../components/ProductGrid";
+import { useAuth } from "../context/AuthContext";
+import React from "react";
 
 const featuredProducts = [
   {
@@ -11,7 +12,7 @@ const featuredProducts = [
     name: "Smartphone Galaxy Pro",
     price: 799.99,
     description: "Écran 6.5 pouces, processeur 8 coeurs, 128GB, caméra 108MP",
-    image: "https://images.unsplash.com/photo-1598327105666-5b89351aff97?q=80&w=2027&auto=format&fit=crop",
+    images: ["https://images.unsplash.com/photo-1598327105666-5b89351aff97?q=80&w=2027&auto=format&fit=crop"],
     category: "telephones"
   },
   {
@@ -19,7 +20,7 @@ const featuredProducts = [
     name: "Ultrabook Zenith X1",
     price: 1299.99,
     description: "Portable fin et léger, Core i7, 16GB RAM, SSD 512GB, écran 14\"",
-    image: "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?q=80&w=2071&auto=format&fit=crop",
+    images: ["https://images.unsplash.com/photo-1496181133206-80ce9b88a853?q=80&w=2071&auto=format&fit=crop"],
     category: "ordinateurs"
   },
   {
@@ -27,7 +28,7 @@ const featuredProducts = [
     name: "Écouteurs Sans Fil Pulse",
     price: 149.99,
     description: "Réduction de bruit active, autonomie 30h, résistant à l'eau",
-    image: "https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?q=80&w=1978&auto=format&fit=crop",
+    images: ["https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?q=80&w=1978&auto=format&fit=crop"],
     category: "accessoires"
   },
   {
@@ -35,7 +36,7 @@ const featuredProducts = [
     name: "Carte Graphique TurboVision",
     price: 549.99,
     description: "8GB GDDR6, ray tracing, ports HDMI 2.1, performance gaming",
-    image: "https://images.unsplash.com/photo-1591488320449-011701bb6704?q=80&w=2070&auto=format&fit=crop",
+    images: ["https://images.unsplash.com/photo-1591488320449-011701bb6704?q=80&w=2070&auto=format&fit=crop"],
     category: "ordinateurs"
   }
 ];

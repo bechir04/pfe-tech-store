@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, use } from 'react';
+import React, { useEffect, useState, use } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCart } from '../../../context/CartContext';
@@ -134,9 +134,19 @@ const productsDatabase = [
   }
 ];
 
-// Fonction pour récupérer un produit par son ID
-function getProductById(id: string) {
-  return productsDatabase.find(product => product.id === id);
+// Fonction pour récupérer un produit par son ID et catégorie
+function getProductById(id: string, category: string) {
+  // 1. Check hardcoded DB
+  let product = productsDatabase.find(product => product.id === id && product.category === category);
+  if (product) return product;
+
+  // 2. Check localStorage (if running in browser)
+  if (typeof window !== "undefined") {
+    const userProducts = JSON.parse(localStorage.getItem("userProducts") || "[]");
+    product = userProducts.find((p: any) => p.id === id && p.category === category);
+    if (product) return product;
+  }
+  return null;
 }
 
 // Fonction pour récupérer des produits similaires
@@ -147,29 +157,71 @@ function getSimilarProducts(category: string, currentId: string) {
 }
 
 export default function ProductDetail({ params }: ProductDetailParams) {
-  // Unwrap params if it's a Promise (Next.js future-proofing)
-  const actualParams = typeof params.then === 'function' ? use(params) : params;
+  // Unwrap params for Next.js 14+ streaming
+  // @ts-ignore
+  const { category, id } = typeof params.then === 'function' ? use(params) : params;
+
+  const [product, setProduct] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
-  const [selectedColor, setSelectedColor] = useState("");
+  const [selectedColor, setSelectedColor] = useState('');
   const [isAddedToCart, setIsAddedToCart] = useState(false);
   const { addToCart } = useCart();
-  
-  // Récupérer le produit à partir de l'ID
-  const product = getProductById(actualParams.id);
-  
-  // Si le produit n'existe pas, renvoyer une page 404
-  if (!product) {
-    notFound();
-  }
-  
-  // Vérifier que le produit est bien dans la catégorie demandée
-  if (product.category !== actualParams.category) {
-    notFound();
-  }
-  
-  // Produits similaires
-  const similarProducts = getSimilarProducts(actualParams.category, actualParams.id);
+  const [similarProducts, setSimilarProducts] = useState<any[]>([]);
+  const [imgIdx, setImgIdx] = useState(0);
 
+  useEffect(() => {
+    const findProduct = () => {
+      let found = productsDatabase.find(
+        (p) => p.id === id && p.category === category
+      );
+      if (!found && typeof window !== 'undefined') {
+        const userProducts = JSON.parse(localStorage.getItem('userProducts') || '[]');
+        const userArticles = JSON.parse(localStorage.getItem('userArticles') || '[]');
+        const allUserProducts = userProducts.concat(userArticles);
+        found = allUserProducts.find((p: any) => p.id === id && p.category === category);
+        // Normalize user product fields for display
+        if (found) {
+          found = {
+            ...found,
+            images: found.images || (found.image ? [found.image] : []),
+            features: found.features || [],
+            specifications: found.specifications || {},
+            stock: found.stock ?? 99,
+            seller: found.seller || null,
+            condition: found.condition || '',
+            warranty: found.warranty || '',
+            videoUrl: found.videoUrl || '',
+          };
+        }
+        setSimilarProducts(
+          allUserProducts.filter((p: any) => p.category === category && p.id !== id).slice(0, 4)
+        );
+      } else if (found) {
+        setSimilarProducts(
+          productsDatabase.filter((p) => p.category === category && p.id !== id).slice(0, 4)
+        );
+      }
+      setProduct(found || null);
+      setLoading(false);
+    };
+    findProduct();
+  }, [id, category]);
+
+  if (loading) return <div>Chargement...</div>;
+  if (!product) return <div>Produit introuvable.</div>;
+
+  // Carousel logic for images
+  const images: string[] = product.images && product.images.length > 0 ? product.images : (product.image ? [product.image] : ['/public/file.svg']);
+  const showArrows = images.length > 1;
+  const prevImg = (e: React.MouseEvent) => { e.stopPropagation(); setImgIdx((idx) => (idx - 1 + images.length) % images.length); };
+  const nextImg = (e: React.MouseEvent) => { e.stopPropagation(); setImgIdx((idx) => (idx + 1) % images.length); };
+
+  // Vérifier que le produit est bien dans la catégorie demandée
+  if (product.category !== category) {
+    notFound();
+  }
+  
   // Gérer l'ajout au panier
   const handleAddToCart = () => {
     addToCart({
@@ -177,14 +229,10 @@ export default function ProductDetail({ params }: ProductDetailParams) {
       name: product.name,
       price: product.price,
       quantity: quantity,
-      image: product.image,
+      image: product.image || (product.images && product.images[0]) || '',
       category: product.category
     });
-    
-    // Afficher notification
     setIsAddedToCart(true);
-    
-    // Masquer la notification après 3 secondes
     setTimeout(() => {
       setIsAddedToCart(false);
     }, 3000);
@@ -192,14 +240,14 @@ export default function ProductDetail({ params }: ProductDetailParams) {
 
   // Gérer le changement de quantité
   const handleQuantityChange = (newQuantity: number) => {
-    if (newQuantity >= 1 && newQuantity <= product.stock) {
+    if (newQuantity >= 1 && newQuantity <= (product.stock || 99)) {
       setQuantity(newQuantity);
     }
   };
 
+  // Defensive rendering for all product fields
   return (
     <div>
-      {/* Notification d'ajout au panier */}
       {isAddedToCart && (
         <div className="fixed top-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in-down">
           <div className="flex items-center">
@@ -210,22 +258,19 @@ export default function ProductDetail({ params }: ProductDetailParams) {
           </div>
         </div>
       )}
-
       <div className="mb-6">
         <Link href={`/produits/${product.category}`} className="text-blue-600 dark:text-blue-400 hover:underline flex items-center">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
           </svg>
-          Retour aux {product.category === 'telephones' ? 'téléphones' : 
-                     product.category === 'accessoires' ? 'accessoires' : 'PC & composants'}
+          Retour aux {product.category === 'telephones' ? 'téléphones' : product.category === 'accessoires' ? 'accessoires' : 'PC & composants'}
         </Link>
       </div>
-      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-        {/* Image du produit */}
+        {/* Carousel images */}
         <div className="relative h-96 md:h-full rounded-lg overflow-hidden bg-white dark:bg-gray-800">
           <Image
-            src={product.image}
+            src={images[imgIdx]}
             alt={product.name}
             fill
             style={{ objectFit: 'contain' }}
@@ -233,168 +278,148 @@ export default function ProductDetail({ params }: ProductDetailParams) {
             sizes="(max-width: 768px) 100vw, 50vw"
             priority
           />
+          {showArrows && (
+            <>
+              <button onClick={prevImg} className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 dark:bg-gray-900/80 rounded-full p-1 shadow hover:bg-cyan-100 dark:hover:bg-cyan-900/80 z-10">
+                <svg className="h-5 w-5 text-cyan-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+              </button>
+              <button onClick={nextImg} className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 dark:bg-gray-900/80 rounded-full p-1 shadow hover:bg-cyan-100 dark:hover:bg-cyan-900/80 z-10">
+                <svg className="h-5 w-5 text-cyan-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+              </button>
+            </>
+          )}
         </div>
-        
         {/* Informations produit */}
         <div>
           <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
           <div className="text-2xl font-bold text-blue-600 dark:text-blue-400 mb-4">
-            {product.price.toFixed(3)} TND
+            {product.price?.toFixed(3)} TND
           </div>
-          
           <p className="text-gray-600 dark:text-gray-300 mb-6">
             {product.description}
           </p>
-          
-          <div className="mb-6">
-            <div className="flex items-center space-x-2 mb-3">
-              <div className={`h-3 w-3 rounded-full ${product.stock > 0 ? 'bg-green-500' : 'bg-red-500'}`}></div>
-              <span className={`${product.stock > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                {product.stock > 0 ? `En stock (${product.stock} disponibles)` : 'Rupture de stock'}
-              </span>
-            </div>
-            
-            <div className="flex items-center">
-              <div className="flex items-center mr-4">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span className="text-sm">Livraison 24-48h</span>
-              </div>
-              
-              <div className="flex items-center">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                </svg>
-                <span className="text-sm">Garantie 2 ans</span>
-              </div>
-            </div>
-          </div>
-          
-          {/* Sélecteur de couleurs si disponible */}
-          {product.specifications?.couleurs && (
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold mb-2">Couleur</h3>
-              <div className="flex space-x-2">
-                {product.specifications.couleurs.map((couleur) => (
-                  <button 
-                    key={couleur}
-                    className={`border-2 ${selectedColor === couleur ? 'border-blue-500 dark:border-blue-500' : 'border-gray-300 dark:border-gray-600'} hover:border-blue-500 dark:hover:border-blue-500 rounded-full px-4 py-2 text-sm`}
-                    onClick={() => setSelectedColor(couleur)}
-                  >
-                    {couleur}
-                  </button>
-                ))}
-              </div>
+          {product.condition && (
+            <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">État : <span className="font-semibold">{product.condition}</span></div>
+          )}
+          {product.warranty && (
+            <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">Garantie : <span className="font-semibold">{product.warranty}</span></div>
+          )}
+          {product.specs && product.specs.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-1">
+              {product.specs.slice(0,2).map((spec: any, i: number) => (
+                <span key={i} className="bg-cyan-100 dark:bg-cyan-900 text-cyan-700 dark:text-cyan-200 px-2 py-1 rounded text-xs font-medium">{spec.key}: {spec.value}</span>
+              ))}
             </div>
           )}
-          
-          {/* Sélecteur de quantité */}
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-2">Quantité</h3>
-            <div className="flex items-center">
-              <button 
-                className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1 rounded-l-lg"
-                onClick={() => handleQuantityChange(quantity - 1)}
-                disabled={quantity <= 1}
-              >
-                -
-              </button>
-              <span className="bg-white dark:bg-gray-800 border-t border-b border-gray-300 dark:border-gray-600 px-4 py-1">
-                {quantity}
+          {product.seller && (
+            <div className="flex items-center gap-2 mt-1">
+              <Link href={`/profile/${product.seller.id}`} className="flex items-center gap-1 group">
+                <Image
+                  src={product.seller.avatar}
+                  alt={product.seller.name}
+                  width={28}
+                  height={28}
+                  className="rounded-full border-2 border-cyan-400 group-hover:border-blue-500"
+                />
+                <span className="font-medium text-gray-800 dark:text-gray-200 group-hover:text-blue-500 text-sm">
+                  {product.seller.name}
+                </span>
+                {product.seller.verified && <span className="ml-1 bg-cyan-200 text-cyan-800 px-2 py-0.5 rounded text-xs font-semibold">Vérifié</span>}
+                {product.seller.badges && product.seller.badges.filter((b: string) => b !== 'verified').map((badge: string) => (
+                  <span key={badge} className="ml-1 bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded text-xs font-semibold">{badge}</span>
+                ))}
+              </Link>
+              <span className="flex items-center ml-2 text-yellow-400 text-xs font-semibold">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <svg key={i} className={`h-4 w-4 ${i < Math.round(product.seller.rating) ? 'fill-yellow-400' : 'fill-gray-300 dark:fill-gray-600'}`} viewBox="0 0 20 20"><polygon points="9.9,1.1 12.3,6.6 18.2,7.3 13.7,11.3 15,17.1 9.9,14.1 4.8,17.1 6.1,11.3 1.6,7.3 7.5,6.6" /></svg>
+                ))}
+                <span className="ml-1">{product.seller.rating?.toFixed(1)}</span>
               </span>
-              <button 
-                className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 px-3 py-1 rounded-r-lg"
-                onClick={() => handleQuantityChange(quantity + 1)}
-                disabled={quantity >= product.stock}
-              >
-                +
-              </button>
             </div>
-          </div>
-          
-          {/* Options d'achat */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-8">
-            <button 
+          )}
+          <div className="flex gap-2 mt-2">
+            <button
               onClick={handleAddToCart}
-              className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center"
-              disabled={product.stock === 0}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-full text-sm flex items-center"
+              disabled={(product.stock || 0) === 0}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
               Ajouter au panier
             </button>
-            
-            <Link href="/panier" className="w-full md:w-auto border border-blue-600 dark:border-blue-400 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 py-3 px-6 rounded-lg font-semibold text-center">
+            <Link href="/panier" className="border border-blue-600 dark:border-blue-400 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 px-3 py-1 rounded-full text-sm flex items-center">
               Voir le panier
             </Link>
           </div>
         </div>
       </div>
-      
       {/* Caractéristiques et spécifications */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
         {/* Caractéristiques */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
-          <h2 className="text-xl font-bold mb-4 border-b pb-2 border-gray-200 dark:border-gray-700">
-            Caractéristiques principales
-          </h2>
-          
-          <ul className="space-y-2">
-            {product.features?.map((feature, index) => (
-              <li key={index} className="flex items-start">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                </svg>
-                <span>{feature}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-        
-        {/* Spécifications techniques */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
-          <h2 className="text-xl font-bold mb-4 border-b pb-2 border-gray-200 dark:border-gray-700">
-            Spécifications techniques
-          </h2>
-          
-          <div className="space-y-4">
-            {product.specifications?.dimensions && (
-              <div>
-                <dt className="font-medium text-gray-700 dark:text-gray-300">Dimensions</dt>
-                <dd className="mt-1">{product.specifications.dimensions}</dd>
-              </div>
-            )}
-            
-            {product.specifications?.poids && (
-              <div>
-                <dt className="font-medium text-gray-700 dark:text-gray-300">Poids</dt>
-                <dd className="mt-1">{product.specifications.poids}</dd>
-              </div>
-            )}
-            
-            {product.specifications?.connectivité && (
-              <div>
-                <dt className="font-medium text-gray-700 dark:text-gray-300">Connectivité</dt>
-                <dd className="mt-1">{product.specifications.connectivité}</dd>
-              </div>
-            )}
+        {(product.features && product.features.length > 0) && (
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
+            <h2 className="text-xl font-bold mb-4 border-b pb-2 border-gray-200 dark:border-gray-700">
+              Caractéristiques principales
+            </h2>
+            <ul className="space-y-2">
+              {product.features.map((feature: string, index: number) => (
+                <li key={index} className="flex items-start">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2 mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
           </div>
-        </div>
+        )}
+        {/* Spécifications techniques */}
+        {product.specifications && Object.keys(product.specifications).length > 0 && (
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm">
+            <h2 className="text-xl font-bold mb-4 border-b pb-2 border-gray-200 dark:border-gray-700">
+              Spécifications techniques
+            </h2>
+            <div className="space-y-4">
+              {product.specifications.dimensions && (
+                <div>
+                  <dt className="font-medium text-gray-700 dark:text-gray-300">Dimensions</dt>
+                  <dd className="mt-1">{product.specifications.dimensions}</dd>
+                </div>
+              )}
+              {product.specifications.poids && (
+                <div>
+                  <dt className="font-medium text-gray-700 dark:text-gray-300">Poids</dt>
+                  <dd className="mt-1">{product.specifications.poids}</dd>
+                </div>
+              )}
+              {product.specifications.connectivité && (
+                <div>
+                  <dt className="font-medium text-gray-700 dark:text-gray-300">Connectivité</dt>
+                  <dd className="mt-1">{product.specifications.connectivité}</dd>
+                </div>
+              )}
+              {product.specifications.couleurs && (
+                <div>
+                  <dt className="font-medium text-gray-700 dark:text-gray-300">Couleurs</dt>
+                  <dd className="mt-1">{product.specifications.couleurs.join(', ')}</dd>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
-      
       {/* Produits similaires */}
       {similarProducts.length > 0 && (
         <div className="mb-12">
           <h2 className="text-2xl font-bold mb-6">Produits similaires</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-            {similarProducts.map((item) => (
+            {similarProducts.map((item: any) => (
               <div key={item.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
                 <Link href={`/produits/${item.category}/${item.id}`}>
                   <div className="relative h-48 w-full">
                     <Image
-                      src={item.image}
+                      src={item.image || (item.images && item.images[0]) || '/public/file.svg'}
                       alt={item.name}
                       fill
                       style={{ objectFit: 'cover' }}
@@ -402,16 +427,14 @@ export default function ProductDetail({ params }: ProductDetailParams) {
                     />
                   </div>
                 </Link>
-                
                 <div className="p-4">
                   <Link href={`/produits/${item.category}/${item.id}`}>
                     <h3 className="font-semibold text-lg mb-2 hover:text-blue-600 dark:hover:text-blue-400">
                       {item.name}
                     </h3>
                   </Link>
-                  
                   <p className="text-blue-600 dark:text-blue-400 font-bold">
-                    {item.price.toFixed(3)} TND
+                    {item.price?.toFixed(3)} TND
                   </p>
                 </div>
               </div>

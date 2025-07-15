@@ -10,7 +10,7 @@ const accessoires = [
     name: "Écouteurs Sans Fil Pulse",
     price: 149.99,
     description: "Réduction de bruit active, autonomie 30h, résistant à l'eau",
-    image: "https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?q=80&w=1978&auto=format&fit=crop",
+    images: ["https://images.unsplash.com/photo-1572569511254-d8f925fe2cbb?q=80&w=1978&auto=format&fit=crop"],
     category: "accessoires"
   },
   {
@@ -18,7 +18,7 @@ const accessoires = [
     name: "Casque Gaming RGBFury",
     price: 99.99,
     description: "Son surround 7.1, micro rétractable, éclairage RGB, confortable",
-    image: "https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?q=80&w=1976&auto=format&fit=crop",
+    images: ["https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?q=80&w=1976&auto=format&fit=crop"],
     category: "accessoires"
   },
   {
@@ -26,7 +26,7 @@ const accessoires = [
     name: "Clavier Mécanique RGB",
     price: 129.99,
     description: "Switches bleues, rétroéclairage RGB personnalisable, anti-ghosting",
-    image: "https://images.unsplash.com/photo-1587829741301-dc798b83add3?q=80&w=1965&auto=format&fit=crop",
+    images: ["https://images.unsplash.com/photo-1587829741301-dc798b83add3?q=80&w=1965&auto=format&fit=crop"],
     category: "accessoires"
   },
   {
@@ -34,7 +34,7 @@ const accessoires = [
     name: "Souris Gaming Ultra",
     price: 69.99,
     description: "12000 DPI, 8 boutons programmables, éclairage RVB personnalisable",
-    image: "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?q=80&w=1965&auto=format&fit=crop",
+    images: ["https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?q=80&w=1965&auto=format&fit=crop"],
     category: "accessoires"
   }
 ];

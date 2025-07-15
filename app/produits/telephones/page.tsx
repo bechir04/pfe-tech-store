@@ -10,7 +10,7 @@ const telephones = [
     name: "Smartphone Galaxy Pro",
     price: 799.99,
     description: "Écran 6.5 pouces, processeur 8 coeurs, 128GB, caméra 108MP",
-    image: "https://images.unsplash.com/photo-1598327105666-5b89351aff97?q=80&w=2027&auto=format&fit=crop",
+    images: ["https://images.unsplash.com/photo-1598327105666-5b89351aff97?q=80&w=2027&auto=format&fit=crop"],
     category: "telephones"
   },
   {
@@ -18,7 +18,7 @@ const telephones = [
     name: "Smartphone EcoX Mini",
     price: 399.99,
     description: "Compact, 5.4 pouces, 64GB, double caméra, autonomie 2 jours",
-    image: "https://images.unsplash.com/photo-1585060544812-6b45742d762f?q=80&w=2081&auto=format&fit=crop",
+    images: ["https://images.unsplash.com/photo-1585060544812-6b45742d762f?q=80&w=2081&auto=format&fit=crop"],
     category: "telephones"
   },
   {
@@ -26,7 +26,7 @@ const telephones = [
     name: "Smartphone UltraPixel",
     price: 899.99,
     description: "Caméra professionnelle 200MP, zoom 10x, écran AMOLED 120Hz",
-    image: "https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?q=80&w=2129&auto=format&fit=crop",
+    images: ["https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?q=80&w=2129&auto=format&fit=crop"],
     category: "telephones"
   },
   {
@@ -34,7 +34,7 @@ const telephones = [
     name: "Smartphone Pliable X-Fold",
     price: 1299.99,
     description: "Écran pliable de 7.6 pouces, résistant à l'eau, dual SIM",
-    image: "https://images.unsplash.com/photo-1565849904461-04a58ad377e0?q=80&w=2036&auto=format&fit=crop",
+    images: ["https://images.unsplash.com/photo-1565849904461-04a58ad377e0?q=80&w=2036&auto=format&fit=crop"],
     category: "telephones"
   }
 ];

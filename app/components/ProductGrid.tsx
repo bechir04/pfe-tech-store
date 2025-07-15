@@ -8,16 +8,23 @@ type Product = {
   name: string;
   price: number;
   description: string;
-  image: string;
+  images: string[];
+  videoUrl?: string;
   category: string;
+  condition?: string;
+  warranty?: string;
+  specs?: { key: string; value: string }[];
+  seller?: any;
 };
 
 type ProductGridProps = {
   products: Product[];
   title?: string;
+  compact?: boolean;
+  detailed?: boolean;
 };
 
-const ProductGrid = ({ products, title }: ProductGridProps) => {
+const ProductGrid = ({ products, title, compact, detailed }: ProductGridProps) => {
   return (
     <div className="py-8">
       {title && (
@@ -25,10 +32,12 @@ const ProductGrid = ({ products, title }: ProductGridProps) => {
           {title}
         </h2>
       )}
-      <div className="glass p-4 md:p-8 rounded-2xl shadow-glass">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+      <div className={`glass p-4 md:p-8 rounded-2xl shadow-glass`}>
+        <div className={compact
+          ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4"
+          : "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8"}>
           {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <ProductCard key={product.id} product={product} detailed={!compact} />
           ))}
         </div>
         {products.length === 0 && (
