@@ -5,6 +5,7 @@ import Link from "next/link";
 import ProductGrid from "../components/ProductGrid";
 import { useAuth } from "../context/AuthContext";
 import React from "react";
+import { motion } from 'framer-motion';
 
 const featuredProducts = [
   {
@@ -82,7 +83,7 @@ export default function Home() {
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 space-y-12 bg-gray-950 min-h-screen">
       {/* Hero Section */}
-      <section className="relative rounded-2xl overflow-hidden shadow-xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-0 mb-8 flex flex-col md:flex-row items-center gap-8">
+      <motion.section initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} className="relative rounded-2xl overflow-hidden shadow-xl bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-0 mb-8 flex flex-col md:flex-row items-center gap-8">
         <div className="absolute inset-0 opacity-20">
           <Image 
             src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070&auto=format&fit=crop"
@@ -121,28 +122,36 @@ export default function Home() {
             priority 
           />
         </div>
-      </section>
+      </motion.section>
 
       {/* Categories Section */}
-      <section>
-        <h2 className="text-2xl font-bold mb-6 text-gray-100 tracking-tight">Nos Catégories</h2>
+      <motion.section initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
+        <motion.h2 initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }} className="text-2xl font-bold mb-6 text-gray-100 tracking-tight">Nos Catégories</motion.h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {categories.map((category) => (
-            <div key={category.id} className="bg-gray-900 rounded-xl shadow-lg p-6 flex flex-col items-center text-center hover:scale-105 transition-transform cursor-pointer border border-gray-800">
+          {categories.map((category, i) => (
+            <motion.div
+              key={category.id}
+              whileHover={{ scale: 1.07, boxShadow: '0 0 16px #0ff' }}
+              whileTap={{ scale: 0.97 }}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.08, duration: 0.5 }}
+              className="bg-gray-900 rounded-xl shadow-lg p-6 flex flex-col items-center text-center hover:scale-105 transition-transform cursor-pointer border border-gray-800"
+            >
               <div className="bg-cyan-600 p-4 flex justify-center items-center text-white rounded-xl mb-3">
                 {category.icon}
               </div>
               <h3 className="text-lg font-bold mb-1 text-white">{category.name}</h3>
               <p className="text-gray-400 text-sm leading-snug">{category.description}</p>
-            </div>
+            </motion.div>
           ))}
         </div>
-      </section>
+      </motion.section>
 
       {/* Featured Products Section */}
-      <section>
+      <motion.section initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-gray-100 tracking-tight">Produits en Vedette</h2>
+          <motion.h2 initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }} className="text-2xl font-bold text-gray-100 tracking-tight">Produits en Vedette</motion.h2>
           <Link href="/produits" className="text-cyan-400 hover:underline flex items-center font-semibold text-sm md:text-base">
             Voir tout
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" viewBox="0 0 20 20" fill="currentColor">
@@ -151,12 +160,12 @@ export default function Home() {
           </Link>
         </div>
         <ProductGrid products={featuredProducts} />
-      </section>
+      </motion.section>
 
       {/* Advantages Section */}
-      <section>
+      <motion.section initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
         <div className="bg-gray-900 rounded-xl shadow-lg p-8">
-          <h2 className="text-2xl font-bold mb-6 text-center text-gray-100 tracking-tight">Pourquoi Choisir TechStore ?</h2>
+          <motion.h2 initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5 }} className="text-2xl font-bold mb-6 text-center text-gray-100 tracking-tight">Pourquoi Choisir TechStore ?</motion.h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
             <div className="text-center">
               <div className="bg-cyan-600 rounded-full p-3 inline-flex mb-3">
@@ -187,7 +196,7 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </section>
+      </motion.section>
     </div>
   );
 }

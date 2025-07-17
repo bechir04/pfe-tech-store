@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { FaSearch, FaFilter, FaBell, FaFire, FaStar, FaBolt } from 'react-icons/fa';
+import ProductCard from '../components/ProductCard';
 
 // Mock data for user products (fallback)
 const mockUserProducts = [
@@ -306,13 +307,13 @@ export default function MarketplacePage() {
           {/* Trending Section */}
           <section className="mb-10 animate-fade-in">
             <h2 className="text-2xl font-bold mb-4 flex items-center gap-2"><FaFire className="text-orange-500" /> Tendances</h2>
-            <ProductGrid products={trendingProducts} compact />
+            <ProductGrid products={trendingProducts} detailed />
           </section>
 
           {/* Hot Deals Section */}
           <section className="mb-10 animate-fade-in">
             <h2 className="text-2xl font-bold mb-4 flex items-center gap-2"><FaBolt className="text-yellow-400" /> Bons plans</h2>
-            <ProductGrid products={hotDeals} compact />
+            <ProductGrid products={hotDeals} detailed />
           </section>
 
           {/* Featured Sellers Section */}
@@ -340,7 +341,11 @@ export default function MarketplacePage() {
           {/* All Products Section */}
           <section className="mb-10 animate-fade-in">
             <h2 className="text-2xl font-bold mb-4 flex items-center gap-2"><FaSearch className="text-cyan-500" /> Tous les produits</h2>
-            <ProductGrid products={userProducts} detailed />
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+              {userProducts.map(product => (
+                <ProductCard key={product.id} product={product} detailed />
+              ))}
+            </div>
           </section>
         </main>
       </div>

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useCart } from '../context/CartContext';
 import type { CartItem } from '../context/CartContext';
 import Badge from './Badge';
+import { motion } from 'framer-motion';
 
 export type ProductCardProps = {
   product: {
@@ -41,7 +42,7 @@ const ProductCard = ({ product, detailed }: ProductCardProps) => {
   useEffect(() => {
     if (product.seller) {
       const followed = JSON.parse(localStorage.getItem('followedSellers') || '[]');
-      setIsFollowed(followed.includes(product.seller.id));
+      setIsFollowed(followed.includes(product.seller?.id));
     }
     const favorites = JSON.parse(localStorage.getItem('favoriteProducts') || '[]');
     setIsFavorite(favorites.includes(product.id));
@@ -64,9 +65,9 @@ const ProductCard = ({ product, detailed }: ProductCardProps) => {
     if (!product.seller) return;
     let followed = JSON.parse(localStorage.getItem('followedSellers') || '[]');
     if (isFollowed) {
-      followed = followed.filter((id: string) => id !== product.seller.id);
+      followed = followed.filter((id: string) => id !== product.seller?.id);
     } else {
-      followed.push(product.seller.id);
+      followed.push(product.seller?.id);
     }
     localStorage.setItem('followedSellers', JSON.stringify(followed));
     setIsFollowed(!isFollowed);
@@ -103,7 +104,14 @@ const ProductCard = ({ product, detailed }: ProductCardProps) => {
 
   if (detailed) {
     return (
-      <div className="flex flex-col bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-2xl transition-all group max-w-xs mx-auto min-h-[420px]">
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        whileHover={{ scale: 1.04, boxShadow: '0 0 16px #0ff' }}
+        whileTap={{ scale: 0.98 }}
+        transition={{ duration: 0.4 }}
+        className="flex flex-col bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-2xl transition-all group max-w-xs mx-auto min-h-[420px]"
+      >
         {/* Carousel */}
         <div className="relative w-full h-56 bg-gray-100 dark:bg-gray-900">
           <Link href={`/produits/${product.category}/${product.id}`} className="block w-full h-full">
@@ -157,28 +165,31 @@ const ProductCard = ({ product, detailed }: ProductCardProps) => {
           )}
           {product.seller && (
             <div className="flex items-center gap-2 mt-1">
-              <Link href={`/profile/${product.seller.id}`} className="flex items-center gap-1 group">
+              <Link href={`/profile/${product.seller?.id ?? ''}`} className="flex items-center gap-1 group">
                 <Image
-                  src={product.seller.avatar}
-                  alt={product.seller.name}
+                  src={product.seller?.avatar ?? '/public/file.svg'}
+                  alt={product.seller?.name ?? 'Vendeur'}
                   width={28}
                   height={28}
                   className="rounded-full border-2 border-cyan-400 group-hover:border-blue-500"
                 />
                 <span className="font-medium text-gray-800 dark:text-gray-200 group-hover:text-blue-500 text-sm">
-                  {product.seller.name}
+                  {product.seller?.name}
                 </span>
-                {product.seller.verified && <Badge type="verified" />}
-                {product.seller.badges && product.seller.badges.filter(b => b !== 'verified').map(badge => (
+                {product.seller?.verified && <Badge type="verified" />}
+                {product.seller?.badges && product.seller.badges.filter(b => b !== 'verified').map(badge => (
                   <Badge key={badge} type={badge} />
                 ))}
               </Link>
               <span className="flex items-center ml-2 text-yellow-400 text-xs font-semibold">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <svg key={i} className={`h-4 w-4 ${i < Math.round(product.seller.rating) ? 'fill-yellow-400' : 'fill-gray-300 dark:fill-gray-600'}`} viewBox="0 0 20 20"><polygon points="9.9,1.1 12.3,6.6 18.2,7.3 13.7,11.3 15,17.1 9.9,14.1 4.8,17.1 6.1,11.3 1.6,7.3 7.5,6.6" /></svg>
+                  <svg key={i} className={`h-4 w-4 ${i < Math.round(product.seller?.rating ?? 0) ? 'fill-yellow-400' : 'fill-gray-300 dark:fill-gray-600'}`} viewBox="0 0 20 20"><polygon points="9.9,1.1 12.3,6.6 18.2,7.3 13.7,11.3 15,17.1 9.9,14.1 4.8,17.1 6.1,11.3 1.6,7.3 7.5,6.6" /></svg>
                 ))}
-                <span className="ml-1">{product.seller.rating.toFixed(1)}</span>
+                <span className="ml-1">{product.seller?.rating?.toFixed(1)}</span>
               </span>
+              {typeof product.seller?.sales === 'number' && (
+                <span className="ml-2 text-xs text-gray-500">Ventes: {product.seller?.sales}</span>
+              )}
             </div>
           )}
           <div className="flex gap-2 mt-2">
@@ -196,13 +207,18 @@ const ProductCard = ({ product, detailed }: ProductCardProps) => {
             )}
           </div>
         </div>
-      </div>
+      </motion.div>
     );
   }
 
   // Default (compact) layout
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ scale: 1.04, boxShadow: '0 0 16px #0ff' }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ duration: 0.4 }}
       className="flex flex-col items-center bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all group p-2 min-h-[210px]"
     >
       <Link href={`/produits/${product.category}/${product.id}`} className="block w-full">
@@ -224,18 +240,21 @@ const ProductCard = ({ product, detailed }: ProductCardProps) => {
         </Link>
         <span className="text-base font-bold text-blue-600 dark:text-blue-400 mb-1">{product.price.toFixed(3)} TND</span>
         {product.seller && (
-          <Link href={`/profile/${product.seller.id}`} className="flex items-center gap-1 mb-1">
+          <Link href={`/profile/${product.seller?.id ?? ''}`} className="flex items-center gap-1 mb-1">
             <Image
-              src={product.seller.avatar}
-              alt={product.seller.name}
+              src={product.seller?.avatar ?? '/public/file.svg'}
+              alt={product.seller?.name ?? 'Vendeur'}
               width={18}
               height={18}
               className="rounded-full border border-cyan-400"
             />
             <span className="font-medium text-gray-800 dark:text-gray-200 text-xs truncate max-w-[60px]">
-              {product.seller.name}
+              {product.seller?.name}
             </span>
-            {product.seller.verified && <Badge type="verified" />}
+            {product.seller?.verified && <Badge type="verified" />}
+            {typeof product.seller?.sales === 'number' && (
+              <span className="ml-1 text-xs text-gray-500">{product.seller?.sales} ventes</span>
+            )}
           </Link>
         )}
         <div className="flex items-center gap-1 mt-1">
@@ -256,7 +275,7 @@ const ProductCard = ({ product, detailed }: ProductCardProps) => {
           </button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 

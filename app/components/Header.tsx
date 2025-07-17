@@ -14,6 +14,7 @@ const Header = () => {
   const [newProducts, setNewProducts] = useState<any[]>([]);
   const [newFavoriteProducts, setNewFavoriteProducts] = useState<any[]>([]);
   const [showNotif, setShowNotif] = useState(false);
+  const [profileNotifications, setProfileNotifications] = useState<any[]>([]);
 
   // Reset carousel index when user changes (so new features show immediately)
   useEffect(() => {
@@ -21,23 +22,55 @@ const Header = () => {
   }, [user]);
 
   useEffect(() => {
-    // For demo: check localStorage for new products from followed sellers
     const notif = JSON.parse(localStorage.getItem('newProductsFromFollowed') || '[]');
     setNewProducts(notif);
     // Check for new favorite products
     const favNotif = JSON.parse(localStorage.getItem('newFavoriteProducts') || '[]');
     setNewFavoriteProducts(favNotif);
+    // Load profile notifications
+    const profileNotif = JSON.parse(localStorage.getItem('profileNotifications') || '[]');
+    setProfileNotifications(profileNotif);
+
+    // Listen for localStorage changes (from other tabs/windows)
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === 'profileNotifications') {
+        const updated = JSON.parse(localStorage.getItem('profileNotifications') || '[]');
+        setProfileNotifications(updated);
+      }
+      if (event.key === 'newProductsFromFollowed') {
+        const updated = JSON.parse(localStorage.getItem('newProductsFromFollowed') || '[]');
+        setNewProducts(updated);
+      }
+      if (event.key === 'newFavoriteProducts') {
+        const updated = JSON.parse(localStorage.getItem('newFavoriteProducts') || '[]');
+        setNewFavoriteProducts(updated);
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
   }, []);
+
   const handleNotifClick = () => {
+    // Always re-read notifications before showing
+    const notif = JSON.parse(localStorage.getItem('newProductsFromFollowed') || '[]');
+    setNewProducts(notif);
+    const favNotif = JSON.parse(localStorage.getItem('newFavoriteProducts') || '[]');
+    setNewFavoriteProducts(favNotif);
+    const profileNotif = JSON.parse(localStorage.getItem('profileNotifications') || '[]');
+    setProfileNotifications(profileNotif);
     setShowNotif((v) => !v);
     // Clear notifications when opened
-    if (newProducts.length > 0) {
+    if (notif.length > 0) {
       localStorage.setItem('newProductsFromFollowed', '[]');
       setNewProducts([]);
     }
-    if (newFavoriteProducts.length > 0) {
+    if (favNotif.length > 0) {
       localStorage.setItem('newFavoriteProducts', '[]');
       setNewFavoriteProducts([]);
+    }
+    if (profileNotif.length > 0) {
+      localStorage.setItem('profileNotifications', '[]');
+      setProfileNotifications([]);
     }
   };
 
@@ -135,20 +168,39 @@ const Header = () => {
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 7.165 6 9.388 6 12v2.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
-                {(newProducts.length + newFavoriteProducts.length) > 0 && (
-                  <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{newProducts.length + newFavoriteProducts.length}</span>
+                {(newProducts.length + newFavoriteProducts.length + profileNotifications.length) > 0 && (
+                  <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{newProducts.length + newFavoriteProducts.length + profileNotifications.length}</span>
                 )}
               </button>
-              {showNotif && (newProducts.length > 0 || newFavoriteProducts.length > 0) && (
+              {showNotif && (
                 <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded shadow-lg z-50 p-4">
                   <h4 className="font-bold mb-2 text-gray-900 dark:text-white">Notifications</h4>
                   <ul className="space-y-2">
+                    {profileNotifications.length > 0 && profileNotifications.map((notif, i) => (
+                      <li key={i} className="text-sm text-gray-800 dark:text-gray-200">
+                        <span className="font-semibold text-cyan-600 dark:text-cyan-400">{notif.message}</span>
+                        <span className="block text-xs text-gray-400 mt-1">{new Date(notif.timestamp).toLocaleString()}</span>
+                      </li>
+                    ))}
                     {newProducts.length > 0 && (
                       <li className="text-sm text-gray-800 dark:text-gray-200">
-                        <span className="font-semibold text-cyan-600 dark:text-cyan-400">Nouveaux articles de vos vendeurs suivis :</span>
-                        <ul className="list-disc ml-5 mt-1">
+                        <span className="font-semibold text-cyan-600 dark:text-cyan-400 flex items-center gap-2">
+                          <svg className="h-5 w-5 text-cyan-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 11H9v-2h2v2zm0-4H9V7h2v2z"/></svg>
+                          Nouveaux produits de vos vendeurs suivis :
+                        </span>
+                        <ul className="list-none ml-0 mt-2 space-y-2">
                           {newProducts.map((prod, i) => (
-                            <li key={i}>{prod.name || prod}</li>
+                            <li key={i} className="flex items-center gap-2 bg-cyan-50 dark:bg-cyan-900/30 rounded p-2">
+                              {prod.productImage && (
+                                <img src={prod.productImage} alt={prod.productName} className="w-8 h-8 rounded object-cover border border-cyan-300" />
+                              )}
+                              <span>
+                                <span className="font-bold text-cyan-700 dark:text-cyan-300">{prod.sellerName}</span>
+                                {" "}a ajouté :{" "}
+                                <span className="font-semibold">{prod.productName}</span>
+                              </span>
+                              <span className="ml-auto text-xs text-gray-400">{new Date(prod.timestamp).toLocaleString()}</span>
+                            </li>
                           ))}
                         </ul>
                       </li>
@@ -162,6 +214,9 @@ const Header = () => {
                           ))}
                         </ul>
                       </li>
+                    )}
+                    {profileNotifications.length === 0 && newProducts.length === 0 && newFavoriteProducts.length === 0 && (
+                      <li className="text-sm text-gray-500">Aucune notification.</li>
                     )}
                   </ul>
                 </div>

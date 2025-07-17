@@ -757,7 +757,7 @@ const renderUserModal = () => selectedUser && (
     doc.text('Résumé des indicateurs clés', 14, 38);
     doc.setFontSize(11);
     let lastY = 42;
-    let table = autoTable(doc, {
+    autoTable(doc, {
       startY: lastY,
       head: [['Revenus totaux', 'Commandes', 'Utilisateurs actifs', 'Taux de conversion']],
       body: [[
@@ -770,12 +770,12 @@ const renderUserModal = () => selectedUser && (
       styles: { fontSize: 11 },
       headStyles: { fillColor: [59, 130, 246] },
     });
-    lastY = (table as any).finalY || (table as any).lastAutoTable?.finalY || lastY + 20;
+    lastY = (doc as any).lastAutoTable?.finalY || lastY + 20;
 
     // Sales Trend Table
     doc.setFontSize(14);
     doc.text('Évolution des ventes', 14, lastY + 10);
-    table = autoTable(doc, {
+    autoTable(doc, {
       startY: lastY + 14,
       head: [['Mois', 'Ventes (€)', 'Commandes']],
       body: analyticsData.salesData.map(d => [d.month, d.sales, d.orders]),
@@ -783,12 +783,12 @@ const renderUserModal = () => selectedUser && (
       styles: { fontSize: 11 },
       headStyles: { fillColor: [16, 185, 129] },
     });
-    lastY = (table as any).finalY || (table as any).lastAutoTable?.finalY || lastY + 20;
+    lastY = (doc as any).lastAutoTable?.finalY || lastY + 20;
 
     // Category Breakdown
     doc.setFontSize(14);
     doc.text('Répartition par catégorie', 14, lastY + 10);
-    table = autoTable(doc, {
+    autoTable(doc, {
       startY: lastY + 14,
       head: [['Catégorie', 'Part (%)']],
       body: analyticsData.categoryData.map(c => [c.category, c.sales]),
@@ -796,12 +796,12 @@ const renderUserModal = () => selectedUser && (
       styles: { fontSize: 11 },
       headStyles: { fillColor: [245, 158, 11] },
     });
-    lastY = (table as any).finalY || (table as any).lastAutoTable?.finalY || lastY + 20;
+    lastY = (doc as any).lastAutoTable?.finalY || lastY + 20;
 
     // Top Products
     doc.setFontSize(14);
     doc.text('Produits les plus vendus', 14, lastY + 10);
-    table = autoTable(doc, {
+    autoTable(doc, {
       startY: lastY + 14,
       head: [['Produit', 'Ventes', 'Revenus (€)', 'Performance (%)']],
       body: analyticsData.topProducts.map(p => [
@@ -814,12 +814,12 @@ const renderUserModal = () => selectedUser && (
       styles: { fontSize: 11 },
       headStyles: { fillColor: [59, 130, 246] },
     });
-    lastY = (table as any).finalY || (table as any).lastAutoTable?.finalY || lastY + 20;
+    lastY = (doc as any).lastAutoTable?.finalY || lastY + 20;
 
     // User Metrics
     doc.setFontSize(14);
     doc.text('Métriques utilisateurs', 14, lastY + 10);
-    table = autoTable(doc, {
+    autoTable(doc, {
       startY: lastY + 14,
       head: [['Utilisateurs totaux', 'Utilisateurs actifs', 'Nouveaux utilisateurs', 'Taux de conversion']],
       body: [[
@@ -832,6 +832,7 @@ const renderUserModal = () => selectedUser && (
       styles: { fontSize: 11 },
       headStyles: { fillColor: [16, 185, 129] },
     });
+    // No need to update lastY after the last table
 
     doc.save('rapport-analytique-techstore.pdf');
   }

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useAuth } from '../context/AuthContext';
 import Badge from '../components/Badge';
 import ProductGrid from '../components/ProductGrid';
+import Image from 'next/image';
 
 export default function ProfilePage() {
   const { user, logout } = useAuth();
@@ -62,6 +63,34 @@ export default function ProfilePage() {
       category: "ordinateurs"
     }
   ];
+
+  // User's own marketplace products
+  const [myMarketplaceProducts, setMyMarketplaceProducts] = useState<any[]>([]);
+  React.useEffect(() => {
+    if (user && user.uid) {
+      const articles = JSON.parse(localStorage.getItem('userArticles') || '[]');
+      // Only show products where seller.id === user.uid
+      setMyMarketplaceProducts(articles.filter((a: any) => a.seller && a.seller.id === user.uid));
+    } else {
+      setMyMarketplaceProducts([]);
+    }
+  }, [user]);
+
+  const handleDeleteProduct = (id: string) => {
+    if (!user || !user.uid) return;
+    const articles = JSON.parse(localStorage.getItem('userArticles') || '[]');
+    const updated = articles.filter((a: any) => a.id !== id);
+    localStorage.setItem('userArticles', JSON.stringify(updated));
+    setMyMarketplaceProducts(updated.filter((a: any) => a.seller && a.seller.id === user.uid));
+    // Add notification for deletion
+    const profileNotifications = JSON.parse(localStorage.getItem('profileNotifications') || '[]');
+    profileNotifications.push({
+      type: 'info',
+      message: 'Votre article a été supprimé de la marketplace.',
+      timestamp: Date.now()
+    });
+    localStorage.setItem('profileNotifications', JSON.stringify(profileNotifications));
+  };
 
   React.useEffect(() => {
     if (activeTab === 'favorites') {
@@ -223,6 +252,30 @@ export default function ProfilePage() {
           </Link>
         </div>
       </div>
+
+      {/* My Marketplace Products Section */}
+      {user && user.uid && (
+        <div className="bg-gray-900 rounded-lg p-6 border border-gray-800">
+          <h3 className="text-lg font-bold mb-4 text-gray-100">Mes articles en vente sur la marketplace</h3>
+          {myMarketplaceProducts.length === 0 ? (
+            <p className="text-gray-400">Vous n'avez pas encore publié d'article sur la marketplace.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              {myMarketplaceProducts.map(product => (
+                <div key={product.id} className="bg-gray-800 rounded-lg p-4 flex flex-col gap-2 border border-gray-700">
+                  <div className="relative w-full h-40 mb-2">
+                    <Image src={product.images && product.images[0] ? product.images[0] : '/public/file.svg'} alt={product.name} fill style={{objectFit:'cover'}} className="rounded-md" />
+                  </div>
+                  <div className="font-bold text-gray-100">{product.name}</div>
+                  <div className="text-blue-400 font-semibold">{product.price?.toFixed(2)} €</div>
+                  <div className="text-gray-400 text-sm line-clamp-2">{product.description}</div>
+                  <button onClick={() => handleDeleteProduct(product.id)} className="mt-2 bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm font-semibold">Supprimer</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 

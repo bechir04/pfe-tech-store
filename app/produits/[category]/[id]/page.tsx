@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, use } from 'react';
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCart } from '../../../context/CartContext';
@@ -134,6 +134,25 @@ const productsDatabase = [
   }
 ];
 
+// Add a type for user products with optional fields
+// (place this near the top, after productsDatabase)
+type UserProduct = {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+  image?: string;
+  images?: string[];
+  category: string;
+  stock?: number;
+  features?: string[];
+  specifications?: any;
+  seller?: any;
+  condition?: string;
+  warranty?: string;
+  videoUrl?: string;
+};
+
 // Fonction pour récupérer un produit par son ID et catégorie
 function getProductById(id: string, category: string) {
   // 1. Check hardcoded DB
@@ -156,10 +175,23 @@ function getSimilarProducts(category: string, currentId: string) {
     .slice(0, 4);
 }
 
+// Helper to get images array from product
+function getProductImages(product: any): string[] {
+  if (Array.isArray(product.images) && product.images.length > 0) {
+    return product.images;
+  }
+  if (typeof product.image === 'string' && product.image.length > 0) {
+    return [product.image];
+  }
+  return ['/public/file.svg'];
+}
+
 export default function ProductDetail({ params }: ProductDetailParams) {
-  // Unwrap params for Next.js 14+ streaming
-  // @ts-ignore
-  const { category, id } = typeof params.then === 'function' ? use(params) : params;
+  // Next.js migration note:
+  // In future Next.js versions, params may be a Promise and should be unwrapped with use(params):
+  //   const { category, id } = use(params);
+  // For now, direct access is supported and works:
+  const { category, id } = params;
 
   const [product, setProduct] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
@@ -180,18 +212,16 @@ export default function ProductDetail({ params }: ProductDetailParams) {
         const userArticles = JSON.parse(localStorage.getItem('userArticles') || '[]');
         const allUserProducts = userProducts.concat(userArticles);
         found = allUserProducts.find((p: any) => p.id === id && p.category === category);
-        // Normalize user product fields for display
+        // Normalize user product fields for display (only for user products)
         if (found) {
+          const userProduct = found as UserProduct;
           found = {
-            ...found,
-            images: found.images || (found.image ? [found.image] : []),
-            features: found.features || [],
-            specifications: found.specifications || {},
-            stock: found.stock ?? 99,
-            seller: found.seller || null,
-            condition: found.condition || '',
-            warranty: found.warranty || '',
-            videoUrl: found.videoUrl || '',
+            ...userProduct,
+            image: userProduct.image || (userProduct.images && userProduct.images[0]) || '/public/file.svg',
+            features: userProduct.features || [],
+            specifications: userProduct.specifications || {},
+            stock: userProduct.stock ?? 99,
+            // Remove seller, condition, warranty, videoUrl from here
           };
         }
         setSimilarProducts(
@@ -212,7 +242,7 @@ export default function ProductDetail({ params }: ProductDetailParams) {
   if (!product) return <div>Produit introuvable.</div>;
 
   // Carousel logic for images
-  const images: string[] = product.images && product.images.length > 0 ? product.images : (product.image ? [product.image] : ['/public/file.svg']);
+  const images: string[] = getProductImages(product);
   const showArrows = images.length > 1;
   const prevImg = (e: React.MouseEvent) => { e.stopPropagation(); setImgIdx((idx) => (idx - 1 + images.length) % images.length); };
   const nextImg = (e: React.MouseEvent) => { e.stopPropagation(); setImgIdx((idx) => (idx + 1) % images.length); };

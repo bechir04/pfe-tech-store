@@ -1,11 +1,34 @@
+'use client';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
-import React, { useState, use } from 'react';
+import React, { useState } from 'react';
 import ReviewSection from '../../components/ReviewSection';
 import { useAuth } from '../../context/AuthContext';
+import type { User as MarketplaceUser } from '../../types/marketplace';
 
 // Mock data for user products (updated for new Product type)
-const userProducts = [
+const userProducts: Array<{
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+  images: string[];
+  videoUrl?: string;
+  category: string;
+  condition?: string;
+  warranty?: string;
+  specs?: { key: string; value: string }[];
+  seller: {
+    id: string;
+    name: string;
+    avatar: string;
+    verified: boolean;
+    badges: string[];
+    rating: number;
+    sales: number;
+    phone?: string; // Added phone number
+  };
+}> = [
   {
     id: 'u001',
     name: 'Casque Gamer Pro',
@@ -23,12 +46,22 @@ const userProducts = [
       { key: 'Compatibilité', value: 'PC, PS5, Xbox' },
       { key: 'Micro', value: 'Antibruit' },
     ],
+    seller: {
+      id: 's001',
+      name: 'John Doe',
+      avatar: 'https://via.placeholder.com/50',
+      verified: true,
+      badges: ['premium', 'fast_shipping'],
+      rating: 4.5,
+      sales: 10,
+      phone: '0123456789',
+    },
   },
   {
     id: 'u002',
     name: 'Laptop Lenovo ThinkPad',
     price: 499.99,
-    description: 'Ordinateur portable d\'occasion, 8GB RAM, SSD 256GB.',
+    description: "Ordinateur portable d'occasion, 8GB RAM, SSD 256GB.",
     images: [
       'https://images.unsplash.com/photo-1519389950473-47ba0277781c?q=80&w=800&auto=format&fit=crop',
     ],
@@ -39,20 +72,42 @@ const userProducts = [
       { key: 'RAM', value: '8GB' },
       { key: 'Stockage', value: '256GB SSD' },
     ],
+    seller: {
+      id: 's002',
+      name: 'Jane Smith',
+      avatar: 'https://via.placeholder.com/50',
+      verified: false,
+      badges: [],
+      rating: 3.8,
+      sales: 5,
+    },
   },
 ];
 
 export default function UserProductDetailPage({ params }: { params: { id: string } }) {
-  // Unwrap params if it's a Promise (Next.js future-proofing)
-  const actualParams = typeof params.then === 'function' ? use(params) : params;
-  const product = userProducts.find((p) => p.id === actualParams.id);
+  // Use params directly (no typeof params.then check)
+  const product = userProducts.find((p) => p.id === params.id);
   if (!product) return notFound();
 
   // Carousel state
   const [imgIdx, setImgIdx] = useState(0);
   const images = product.images || [];
 
-  const { user } = useAuth ? useAuth() : { user: { name: 'Demo', email: 'demo@mail.com', uid: 'demo' } };
+  const fallbackUser: MarketplaceUser = { id: 'demo', name: 'Demo', email: 'demo@mail.com', isVerified: false };
+  let user: MarketplaceUser | undefined = undefined;
+  if (useAuth) {
+    const auth = useAuth();
+    if (auth && auth.user) {
+      // Map AuthContext user to marketplace User type
+      user = {
+        id: auth.user.uid,
+        name: auth.user.name,
+        email: auth.user.email,
+        isVerified: false, // You can enhance this if you have verification logic
+        avatarUrl: auth.user.photoURL,
+      };
+    }
+  }
   // Reviews state
   const [reviews, setReviews] = useState(() => {
     const stored = localStorage.getItem('reviews_' + product.id);
@@ -62,7 +117,7 @@ export default function UserProductDetailPage({ params }: { params: { id: string
     const newReview = {
       id: Date.now().toString(),
       productId: product.id,
-      user: user || { name: 'Demo', email: 'demo@mail.com', uid: 'demo' },
+      user: user || fallbackUser,
       rating,
       comment,
       createdAt: new Date().toISOString(),
@@ -131,6 +186,38 @@ export default function UserProductDetailPage({ params }: { params: { id: string
         )}
         <div>
           <h1 className="text-3xl font-bold mb-2">{product.name}</h1>
+          {product.seller && (
+            <div className="flex items-center gap-2 mb-2">
+              <Image
+                src={product.seller.avatar}
+                alt={product.seller.name}
+                width={32}
+                height={32}
+                className="rounded-full border-2 border-cyan-400"
+              />
+              <span className="font-medium text-gray-800 dark:text-gray-200 text-base">
+                {product.seller.name}
+              </span>
+              {product.seller.verified && (
+                <span className="ml-1 bg-cyan-200 text-cyan-800 px-2 py-0.5 rounded text-xs font-semibold">Vérifié</span>
+              )}
+              {product.seller.badges && product.seller.badges.filter(b => b !== 'verified').map(badge => (
+                <span key={badge} className="ml-1 bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded text-xs font-semibold">{badge}</span>
+              ))}
+              <span className="flex items-center ml-2 text-yellow-400 text-xs font-semibold">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <svg key={i} className={`h-4 w-4 ${i < Math.round(product.seller.rating) ? 'fill-yellow-400' : 'fill-gray-300 dark:fill-gray-600'}`} viewBox="0 0 20 20"><polygon points="9.9,1.1 12.3,6.6 18.2,7.3 13.7,11.3 15,17.1 9.9,14.1 4.8,17.1 6.1,11.3 1.6,7.3 7.5,6.6" /></svg>
+                ))}
+                <span className="ml-1">{product.seller.rating?.toFixed(1)}</span>
+              </span>
+              {typeof product.seller.sales === 'number' && (
+                <span className="ml-2 text-xs text-gray-500">Ventes: {product.seller.sales}</span>
+              )}
+              {product.seller.phone && (
+                <span className="ml-4 text-xs text-cyan-700 dark:text-cyan-300 font-semibold">📞 {product.seller.phone}</span>
+              )}
+            </div>
+          )}
           <p className="text-lg text-blue-600 dark:text-blue-400 font-semibold mb-4">{product.price.toFixed(2)}€</p>
           <p className="mb-4 text-gray-700 dark:text-gray-200">{product.description}</p>
           <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Catégorie : {product.category}</div>
@@ -152,7 +239,14 @@ export default function UserProductDetailPage({ params }: { params: { id: string
           )}
         </div>
         {/* Reviews & Feedback */}
-        <ReviewSection productId={product.id} reviews={reviews} currentUser={user} onReview={handleReview} />
+        <ReviewSection productId={product.id} reviews={reviews} currentUser={user || fallbackUser} onReview={handleReview} />
+        {/* Seller Review Section */}
+        {product.seller && (
+          <div className="mt-8">
+            <h2 className="text-lg font-bold mb-2">Avis sur le vendeur</h2>
+            <ReviewSection sellerId={product.seller.id} currentUser={user || fallbackUser} title="Avis sur le vendeur" />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -6,8 +6,12 @@ export type User = {
   email: string;
   isVerified: boolean;
   avatarUrl?: string;
+  avatar?: string; // for marketplace seller avatar
   points?: number;
   badges?: string[];
+  rating?: number; // for sellers
+  verified?: boolean; // for sellers
+  sales?: number; // for sellers
 };
 
 export type Product = {
@@ -18,7 +22,16 @@ export type Product = {
   images: string[]; // multiple images
   videoUrl?: string;
   category: string;
-  owner: User;
+  owner?: User; // optional for marketplace
+  seller?: {
+    id: string;
+    name: string;
+    avatar: string;
+    badges: string[];
+    rating: number;
+    verified: boolean;
+    sales?: number;
+  };
   condition: 'new' | 'like new' | 'used' | 'refurbished';
   warranty?: string;
   specs?: { key: string; value: string }[];
