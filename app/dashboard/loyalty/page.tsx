@@ -1,7 +1,5 @@
 import React from 'react';
-import PointsDisplay from '../../components/PointsDisplay';
 import type { GamificationEvent } from '../../types/marketplace';
-import { motion } from 'framer-motion';
 
 const mockPoints = 1200;
 const mockBadges = ['verified', 'loyalty', 'top-seller'];
@@ -19,57 +17,34 @@ const badgeIcons: Record<string, string> = {
 
 export default function LoyaltyPage() {
   return (
-    <motion.div
-      className="max-w-2xl mx-auto py-10"
-      initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.7 }}
-    >
-      <motion.h1
-        className="text-3xl font-bold mb-4 flex items-center gap-2 text-cyan-400 drop-shadow-glow"
-        initial={{ opacity: 0, x: -30 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.5 }}
-      >
+    <div className="max-w-2xl mx-auto py-10">
+      <h1 className="text-3xl font-bold mb-4 flex items-center gap-2 text-cyan-400 drop-shadow-glow">
         🏆 Mes points & badges
-      </motion.h1>
-      <motion.div
-        className="bg-gradient-to-br from-cyan-900 via-gray-900 to-blue-900 rounded-2xl shadow-xl p-8 mb-8 flex flex-col items-center border-2 border-cyan-500/40 animate-glow"
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.6 }}
-      >
+      </h1>
+      <div className="bg-gradient-to-br from-cyan-900 via-gray-900 to-blue-900 rounded-2xl shadow-xl p-8 mb-8 flex flex-col items-center border-2 border-cyan-500/40 animate-glow">
         <div className="flex items-center gap-4 mb-4">
-          <span className="text-5xl animate-bounce">💰</span>
+          <span className="text-5xl">💰</span>
           <span className="text-4xl font-extrabold text-cyan-300 drop-shadow-glow">{mockPoints} pts</span>
         </div>
         <div className="flex gap-3 mt-2">
           {mockBadges.map(badge => (
             <span
               key={badge}
-              className="inline-flex items-center gap-1 px-4 py-2 rounded-full bg-cyan-800/60 text-cyan-200 font-semibold text-lg shadow-glow border border-cyan-400/40 animate-pulse"
+              className="inline-flex items-center gap-1 px-4 py-2 rounded-full bg-cyan-800/60 text-cyan-200 font-semibold text-lg shadow-glow border border-cyan-400/40"
             >
               <span className="text-2xl">{badgeIcons[badge] || '🔰'}</span> {badge.replace('-', ' ')}
             </span>
           ))}
         </div>
-      </motion.div>
-      <motion.h2
-        className="text-lg font-semibold mt-6 mb-2 flex items-center gap-2 text-cyan-300"
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-      >
+      </div>
+      <h2 className="text-lg font-semibold mt-6 mb-2 flex items-center gap-2 text-cyan-300">
         📜 Historique des points
-      </motion.h2>
+      </h2>
       <ul className="space-y-2">
         {mockHistory.map(e => (
-          <motion.li
+          <li
             key={e.id}
             className="border rounded-xl p-3 flex justify-between items-center bg-gray-900/80 border-cyan-800/40 shadow-glow"
-            initial={{ opacity: 0, x: 30 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.4, delay: 0.1 * (parseInt(e.id.replace('g', '')) || 0) }}
           >
             <span className="flex items-center gap-2">
               {e.type === 'buy' && '🛒'}
@@ -79,9 +54,9 @@ export default function LoyaltyPage() {
             </span>
             <span className="text-cyan-400 font-bold flex items-center gap-1">+{e.points} pts</span>
             <span className="text-xs text-gray-400">{e.date}</span>
-          </motion.li>
+          </li>
         ))}
       </ul>
-    </motion.div>
+    </div>
   );
 } 

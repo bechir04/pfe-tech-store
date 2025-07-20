@@ -53,24 +53,31 @@ export const AdminAuthProvider = ({ children }: AdminAuthProviderProps) => {
   }, []);
 
   const login = async (username: string, password: string): Promise<boolean> => {
-    // Hardcoded admin credentials
-    const ADMIN_USERNAME = 'bechir';
-    const ADMIN_PASSWORD = '123';
-
-    if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+    // Multiple hardcoded admin credentials
+    const adminCredentials = [
+      { username: 'bechir', password: '123' },
+      { username: 'hbib', password: '123' } // New admin added
+    ];
+  
+    const matchedAdmin = adminCredentials.find(
+      (admin) => admin.username === username && admin.password === password
+    );
+  
+    if (matchedAdmin) {
       localStorage.setItem('adminAuthenticated', 'true');
-      localStorage.setItem('adminUsername', username);
-      
+      localStorage.setItem('adminUsername', matchedAdmin.username);
+  
       setAdminUser({
-        username,
+        username: matchedAdmin.username,
         isAuthenticated: true
       });
-      
+  
       return true;
     }
-    
+  
     return false;
   };
+  
 
   const logout = () => {
     localStorage.removeItem('adminAuthenticated');

@@ -8,4 +8,4 @@ export default function PointsDisplay({ points, badges }: { points: number; badg
       {badges.map(b => <Badge key={b} type={b} />)}
     </div>
   );
-} 
+}

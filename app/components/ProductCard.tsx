@@ -8,6 +8,13 @@ import type { CartItem } from '../context/CartContext';
 import Badge from './Badge';
 import { motion } from 'framer-motion';
 
+const cardVariants = {
+  initial: { opacity: 0, y: 30 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' as const } },
+  whileHover: { scale: 1.04, boxShadow: '0 0 16px #0ff' },
+  whileTap: { scale: 0.98 },
+};
+
 export type ProductCardProps = {
   product: {
     id: string;
@@ -105,10 +112,11 @@ const ProductCard = ({ product, detailed }: ProductCardProps) => {
   if (detailed) {
     return (
       <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        whileHover={{ scale: 1.04, boxShadow: '0 0 16px #0ff' }}
-        whileTap={{ scale: 0.98 }}
+        variants={cardVariants}
+        initial="initial"
+        animate="animate"
+        whileHover="whileHover"
+        whileTap="whileTap"
         transition={{ duration: 0.4 }}
         className="flex flex-col bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-2xl transition-all group max-w-xs mx-auto min-h-[420px]"
       >
@@ -214,10 +222,11 @@ const ProductCard = ({ product, detailed }: ProductCardProps) => {
   // Default (compact) layout
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ scale: 1.04, boxShadow: '0 0 16px #0ff' }}
-      whileTap={{ scale: 0.98 }}
+      variants={cardVariants}
+      initial="initial"
+      animate="animate"
+      whileHover="whileHover"
+      whileTap="whileTap"
       transition={{ duration: 0.4 }}
       className="flex flex-col items-center bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all group p-2 min-h-[210px]"
     >

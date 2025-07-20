@@ -1,9 +1,20 @@
 import React from 'react';
 import Link from 'next/link';
+import { motion } from 'framer-motion';
+
+const footerVariants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: 'easeOut' } },
+};
 
 const Footer = () => {
   return (
-    <footer className="bg-gray-900 text-white pt-10 pb-6">
+    <motion.footer
+      className="bg-gray-900 text-white pt-10 pb-6"
+      variants={footerVariants}
+      initial="hidden"
+      animate="visible"
+    >
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
@@ -109,7 +120,7 @@ const Footer = () => {
           </p>
         </div>
       </div>
-    </footer>
+    </motion.footer>
   );
 };
 

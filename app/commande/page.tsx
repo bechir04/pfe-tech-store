@@ -5,53 +5,16 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useCart } from '../context/CartContext';
 import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
+
+const stepVariants = {
+  initial: { opacity: 0, y: 30 },
+  animate: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+  exit: { opacity: 0, y: -20, transition: { duration: 0.3 } },
+};
 
 // Composant fictif pour simuler l'intégration PayPal (dans un vrai projet, on utiliserait @paypal/react-paypal-js)
-const PayPalButton = ({ amount, onSuccess, onError, onCancel }: { 
-  amount: number; 
-  onSuccess: () => void; 
-  onError: () => void; 
-  onCancel: () => void; 
-}) => {
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handlePayment = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      onSuccess();
-    }, 2000);
-  };
-
-  return (
-    <button
-      onClick={handlePayment}
-      disabled={isLoading}
-      className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center relative"
-    >
-      {isLoading ? (
-        <span className="flex items-center">
-          <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          Traitement...
-        </span>
-      ) : (
-        <>
-          <Image 
-            src="https://www.paypalobjects.com/webstatic/en_US/i/buttons/PP_logo_h_100x26.png" 
-            alt="PayPal" 
-            width={80} 
-            height={20} 
-            className="mr-2"
-          />
-          Payer {amount.toFixed(3)} TND
-        </>
-      )}
-    </button>
-  );
-};
+// Remove PayPalButton component and all PayPal references
 
 export default function CheckoutPage() {
   const { cartItems, getTotalPrice, clearCart } = useCart();
@@ -68,7 +31,18 @@ export default function CheckoutPage() {
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [step, setStep] = useState(1); // 1: Informations, 2: Paiement, 3: Confirmation
-  const [paymentMethod, setPaymentMethod] = useState('paypal');
+  const [paymentMethod, setPaymentMethod] = useState('visa'); // Default to Visa
+  const [cardInfo, setCardInfo] = useState({
+    number: '',
+    expiry: '',
+    cvv: '',
+    name: ''
+  });
+  const [cryptoInfo, setCryptoInfo] = useState({
+    address: '',
+    coin: 'BTC'
+  });
+  const [paymentErrors, setPaymentErrors] = useState<Record<string, string>>({});
 
   // Vérifier si le panier est vide, si oui rediriger vers la page du panier
   useEffect(() => {
@@ -89,9 +63,24 @@ export default function CheckoutPage() {
     if (!formData.postalCode.trim()) errors.postalCode = 'Le code postal est requis';
     if (!formData.postalCode.match(/^\d{5}$/)) errors.postalCode = 'Le code postal doit contenir 5 chiffres';
     if (!formData.phone.trim()) errors.phone = 'Le téléphone est requis';
-    if (!formData.phone.match(/^(\+33|0)[1-9](\d{2}){4}$/)) errors.phone = 'Le téléphone n\'est pas valide';
+    if (!/^\d{8}$/.test(formData.phone)) errors.phone = 'Le téléphone doit contenir exactement 8 chiffres';
     
     setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const validatePayment = () => {
+    const errors: Record<string, string> = {};
+    if (paymentMethod === 'visa' || paymentMethod === 'mastercard') {
+      if (!/^\d{16}$/.test(cardInfo.number)) errors.number = 'Numéro de carte invalide (16 chiffres)';
+      if (!/^\d{2}\/\d{2}$/.test(cardInfo.expiry)) errors.expiry = 'Date d\'expiration invalide (MM/AA)';
+      if (!/^\d{3,4}$/.test(cardInfo.cvv)) errors.cvv = 'CVV invalide (3 ou 4 chiffres)';
+      if (!cardInfo.name.trim()) errors.name = 'Nom du titulaire requis';
+    } else if (paymentMethod === 'crypto') {
+      if (!cryptoInfo.address.trim()) errors.address = 'Adresse du portefeuille requise';
+      if (!cryptoInfo.coin) errors.coin = 'Sélectionnez une crypto-monnaie';
+    }
+    setPaymentErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
@@ -145,6 +134,11 @@ export default function CheckoutPage() {
 
   const handlePaymentCancel = () => {
     alert('Paiement annulé.');
+  };
+
+  const handlePaymentClick = () => {
+    if (!validatePayment()) return;
+    handlePaymentSuccess();
   };
 
   const renderStepIndicator = () => (
@@ -264,6 +258,10 @@ export default function CheckoutPage() {
                 name="phone"
                 value={formData.phone}
                 onChange={handleInputChange}
+                maxLength={8}
+                minLength={8}
+                inputMode="numeric"
+                pattern="^\d{8}$"
                 className={`w-full px-4 py-2 border ${formErrors.phone ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700`}
               />
               {formErrors.phone && <p className="text-red-500 text-sm mt-1">{formErrors.phone}</p>}
@@ -282,18 +280,6 @@ export default function CheckoutPage() {
               {formErrors.address && <p className="text-red-500 text-sm mt-1">{formErrors.address}</p>}
             </div>
             
-            <div>
-              <label htmlFor="city" className="block text-sm font-medium mb-1">Ville*</label>
-              <input
-                type="text"
-                id="city"
-                name="city"
-                value={formData.city}
-                onChange={handleInputChange}
-                className={`w-full px-4 py-2 border ${formErrors.city ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700`}
-              />
-              {formErrors.city && <p className="text-red-500 text-sm mt-1">{formErrors.city}</p>}
-            </div>
             
             <div>
               <label htmlFor="postalCode" className="block text-sm font-medium mb-1">Code postal*</label>
@@ -309,7 +295,7 @@ export default function CheckoutPage() {
             </div>
             
             <div>
-              <label htmlFor="country" className="block text-sm font-medium mb-1">Pays*</label>
+              <label htmlFor="country" className="block text-sm font-medium mb-1">Region*</label>
               <select
                 id="country"
                 name="country"
@@ -317,11 +303,24 @@ export default function CheckoutPage() {
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700"
               >
-                <option value="France">France</option>
-                <option value="Belgique">Belgique</option>
-                <option value="Suisse">Suisse</option>
-                <option value="Luxembourg">Luxembourg</option>
-                <option value="Autre">Autre</option>
+                
+                <option value="Autre">Ben Arous</option>
+                <option value="Autre">Manouba</option>
+                <option value="Autre">Sfax</option>
+                <option value="Autre">Sousse</option>
+                <option value="Autre">Zaghouan</option>
+                <option value="Autre">Kairouan</option>
+                <option value="Autre">Kasserine</option>
+                <option value="Autre">Kebili</option>
+                <option value="Autre">Kef</option>
+                <option value="Autre">Mahdia</option>
+                <option value="Autre">Medenine</option>
+                <option value="Autre">Monastir</option>
+                <option value="Autre">Nabeul</option>
+                <option value="Autre">Sfax</option>
+                <option value="Autre">Sousse</option>
+                <option value="Autre">Tataouine</option>
+                <option value="Autre">Tozeur</option>
               </select>
             </div>
           </div>
@@ -349,58 +348,131 @@ export default function CheckoutPage() {
     </form>
   );
 
+  // Payment methods with emojis
+  const paymentOptions = [
+    { id: 'visa', label: 'Visa', emoji: '💳' },
+    { id: 'mastercard', label: 'Mastercard', emoji: '💳' },
+    { id: 'crypto', label: 'Crypto', emoji: '🪙' },
+  ];
+
   const renderPaymentMethods = () => (
     <div className="bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-sm mb-6">
       <div className="p-6 border-b border-gray-200 dark:border-gray-700">
         <h2 className="text-xl font-semibold mb-4">Méthode de paiement</h2>
-        
         <div className="space-y-4">
-          <label className="flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:border-blue-500 dark:hover:border-blue-500 transition-colors">
-            <input
-              type="radio"
-              name="paymentMethod"
-              value="paypal"
-              checked={paymentMethod === 'paypal'}
-              onChange={() => setPaymentMethod('paypal')}
-              className="h-5 w-5 text-blue-600"
-            />
-            <div className="ml-3 flex items-center">
-              <Image 
-                src="https://www.paypalobjects.com/webstatic/en_US/i/buttons/PP_logo_h_100x26.png" 
-                alt="PayPal" 
-                width={80} 
-                height={20} 
+          {paymentOptions.map(option => (
+            <label key={option.id} className="flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:border-blue-500 dark:hover:border-blue-500 transition-colors">
+              <input
+                type="radio"
+                name="paymentMethod"
+                value={option.id}
+                checked={paymentMethod === option.id}
+                onChange={() => { setPaymentMethod(option.id); setPaymentErrors({}); }}
+                className="h-5 w-5 text-blue-600"
               />
-              <span className="ml-2">PayPal</span>
-            </div>
-          </label>
-          
-          <label className="flex items-center p-4 border border-gray-300 dark:border-gray-600 rounded-lg cursor-pointer hover:border-blue-500 dark:hover:border-blue-500 transition-colors opacity-50">
-            <input
-              type="radio"
-              name="paymentMethod"
-              value="card"
-              disabled
-              className="h-5 w-5 text-blue-600"
-            />
-            <div className="ml-3 flex items-center">
-              <span className="mr-2">Carte bancaire</span>
-              <span className="text-xs text-gray-500 dark:text-gray-400">(bientôt disponible)</span>
-            </div>
-          </label>
+              <span className="ml-3 flex items-center text-lg">
+                <span className="mr-2 text-2xl">{option.emoji}</span>
+                {option.label}
+              </span>
+            </label>
+          ))}
         </div>
+        {/* Card form for Visa/Mastercard */}
+        {(paymentMethod === 'visa' || paymentMethod === 'mastercard') && (
+          <div className="mt-6 space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Numéro de carte</label>
+              <input
+                type="text"
+                maxLength={16}
+                inputMode="numeric"
+                value={cardInfo.number}
+                onChange={e => setCardInfo(c => ({ ...c, number: e.target.value.replace(/\D/g, '') }))}
+                className={`w-full px-4 py-2 border ${paymentErrors.number ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700`}
+                placeholder="1234 5678 9012 3456"
+              />
+              {paymentErrors.number && <p className="text-red-500 text-sm mt-1">{paymentErrors.number}</p>}
+            </div>
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <label className="block text-sm font-medium mb-1">Expiration (MM/AA)</label>
+                <input
+                  type="text"
+                  maxLength={5}
+                  value={cardInfo.expiry}
+                  onChange={e => setCardInfo(c => ({ ...c, expiry: e.target.value.replace(/[^\d\/]/g, '').slice(0,5) }))}
+                  className={`w-full px-4 py-2 border ${paymentErrors.expiry ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700`}
+                  placeholder="MM/AA"
+                />
+                {paymentErrors.expiry && <p className="text-red-500 text-sm mt-1">{paymentErrors.expiry}</p>}
+              </div>
+              <div className="flex-1">
+                <label className="block text-sm font-medium mb-1">CVV</label>
+                <input
+                  type="text"
+                  maxLength={4}
+                  inputMode="numeric"
+                  value={cardInfo.cvv}
+                  onChange={e => setCardInfo(c => ({ ...c, cvv: e.target.value.replace(/\D/g, '') }))}
+                  className={`w-full px-4 py-2 border ${paymentErrors.cvv ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700`}
+                  placeholder="123"
+                />
+                {paymentErrors.cvv && <p className="text-red-500 text-sm mt-1">{paymentErrors.cvv}</p>}
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Nom du titulaire</label>
+              <input
+                type="text"
+                value={cardInfo.name}
+                onChange={e => setCardInfo(c => ({ ...c, name: e.target.value }))}
+                className={`w-full px-4 py-2 border ${paymentErrors.name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700`}
+                placeholder="Nom complet"
+              />
+              {paymentErrors.name && <p className="text-red-500 text-sm mt-1">{paymentErrors.name}</p>}
+            </div>
+          </div>
+        )}
+        {/* Crypto form */}
+        {paymentMethod === 'crypto' && (
+          <div className="mt-6 space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Adresse du portefeuille</label>
+              <input
+                type="text"
+                value={cryptoInfo.address}
+                onChange={e => setCryptoInfo(c => ({ ...c, address: e.target.value }))}
+                className={`w-full px-4 py-2 border ${paymentErrors.address ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700`}
+                placeholder="Votre adresse crypto (BTC, ETH, etc.)"
+              />
+              {paymentErrors.address && <p className="text-red-500 text-sm mt-1">{paymentErrors.address}</p>}
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Crypto-monnaie</label>
+              <select
+                value={cryptoInfo.coin}
+                onChange={e => setCryptoInfo(c => ({ ...c, coin: e.target.value }))}
+                className={`w-full px-4 py-2 border ${paymentErrors.coin ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-700`}
+              >
+                <option value="BTC">Bitcoin (BTC)</option>
+                <option value="ETH">Ethereum (ETH)</option>
+                <option value="USDT">Tether (USDT)</option>
+                <option value="BNB">Binance Coin (BNB)</option>
+              </select>
+              {paymentErrors.coin && <p className="text-red-500 text-sm mt-1">{paymentErrors.coin}</p>}
+            </div>
+          </div>
+        )}
       </div>
-      
       <div className="p-6">
         <div className="mb-6">
-          <PayPalButton
-            amount={getTotalPrice()}
-            onSuccess={handlePaymentSuccess}
-            onError={handlePaymentError}
-            onCancel={handlePaymentCancel}
-          />
+          <button
+            onClick={handlePaymentClick}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-semibold flex items-center justify-center relative"
+          >
+            {paymentMethod === 'crypto' ? 'Payer en Crypto' : paymentMethod === 'visa' ? 'Payer par Visa' : paymentMethod === 'mastercard' ? 'Payer par Mastercard' : 'Payer'} {getTotalPrice().toFixed(3)} TND
+          </button>
         </div>
-        
         <button
           onClick={() => setStep(1)}
           className="w-full border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 py-2 px-6 rounded-lg font-medium"
@@ -469,16 +541,45 @@ export default function CheckoutPage() {
         {step === 2 && "Paiement"}
         {step === 3 && "Confirmation de commande"}
       </h1>
-      
       {step < 3 && renderStepIndicator()}
-      
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className={`${step === 3 ? 'lg:col-span-3' : 'lg:col-span-2'}`}>
-          {step === 1 && renderShippingForm()}
-          {step === 2 && renderPaymentMethods()}
-          {step === 3 && renderConfirmation()}
+          <AnimatePresence mode="wait" initial={false}>
+            {step === 1 && (
+              <motion.div
+                key="step1"
+                variants={stepVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              >
+                {renderShippingForm()}
+              </motion.div>
+            )}
+            {step === 2 && (
+              <motion.div
+                key="step2"
+                variants={stepVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              >
+                {renderPaymentMethods()}
+              </motion.div>
+            )}
+            {step === 3 && (
+              <motion.div
+                key="step3"
+                variants={stepVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              >
+                {renderConfirmation()}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-        
         {step < 3 && (
           <div className="lg:col-span-1">
             {renderOrderSummary()}

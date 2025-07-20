@@ -5,6 +5,18 @@ import Link from 'next/link';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { useState, useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+
+const headerVariants = {
+  hidden: { opacity: 0, y: -30 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
+};
+
+const notifVariants = {
+  hidden: { opacity: 0, y: -10, scale: 0.98 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.3, ease: 'easeOut' } },
+  exit: { opacity: 0, y: -10, scale: 0.98, transition: { duration: 0.2, ease: 'easeIn' } },
+};
 
 const Header = () => {
   const { getTotalItems } = useCart();
@@ -97,7 +109,12 @@ const Header = () => {
   console.log('Header user:', user);
 
   return (
-    <header className="bg-gray-950/90 backdrop-blur shadow-lg sticky top-0 z-30">
+    <motion.header
+      className="bg-gray-950/90 backdrop-blur shadow-lg sticky top-0 z-30"
+      variants={headerVariants}
+      initial="hidden"
+      animate="visible"
+    >
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-20">
           {/* Left: Logo */}
@@ -172,55 +189,64 @@ const Header = () => {
                   <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">{newProducts.length + newFavoriteProducts.length + profileNotifications.length}</span>
                 )}
               </button>
-              {showNotif && (
-                <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded shadow-lg z-50 p-4">
-                  <h4 className="font-bold mb-2 text-gray-900 dark:text-white">Notifications</h4>
-                  <ul className="space-y-2">
-                    {profileNotifications.length > 0 && profileNotifications.map((notif, i) => (
-                      <li key={i} className="text-sm text-gray-800 dark:text-gray-200">
-                        <span className="font-semibold text-cyan-600 dark:text-cyan-400">{notif.message}</span>
-                        <span className="block text-xs text-gray-400 mt-1">{new Date(notif.timestamp).toLocaleString()}</span>
-                      </li>
-                    ))}
-                    {newProducts.length > 0 && (
-                      <li className="text-sm text-gray-800 dark:text-gray-200">
-                        <span className="font-semibold text-cyan-600 dark:text-cyan-400 flex items-center gap-2">
-                          <svg className="h-5 w-5 text-cyan-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 11H9v-2h2v2zm0-4H9V7h2v2z"/></svg>
-                          Nouveaux produits de vos vendeurs suivis :
-                        </span>
-                        <ul className="list-none ml-0 mt-2 space-y-2">
-                          {newProducts.map((prod, i) => (
-                            <li key={i} className="flex items-center gap-2 bg-cyan-50 dark:bg-cyan-900/30 rounded p-2">
-                              {prod.productImage && (
-                                <img src={prod.productImage} alt={prod.productName} className="w-8 h-8 rounded object-cover border border-cyan-300" />
-                              )}
-                              <span>
-                                <span className="font-bold text-cyan-700 dark:text-cyan-300">{prod.sellerName}</span>
-                                {" "}a ajouté :{" "}
-                                <span className="font-semibold">{prod.productName}</span>
-                              </span>
-                              <span className="ml-auto text-xs text-gray-400">{new Date(prod.timestamp).toLocaleString()}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </li>
-                    )}
-                    {newFavoriteProducts.length > 0 && (
-                      <li className="text-sm text-gray-800 dark:text-gray-200">
-                        <span className="font-semibold text-pink-600 dark:text-pink-400">Nouveaux articles favoris :</span>
-                        <ul className="list-disc ml-5 mt-1">
-                          {newFavoriteProducts.map((prod, i) => (
-                            <li key={i}>{prod.name || prod.id}</li>
-                          ))}
-                        </ul>
-                      </li>
-                    )}
-                    {profileNotifications.length === 0 && newProducts.length === 0 && newFavoriteProducts.length === 0 && (
-                      <li className="text-sm text-gray-500">Aucune notification.</li>
-                    )}
-                  </ul>
-                </div>
-              )}
+              <AnimatePresence>
+                {showNotif && (
+                  <motion.div
+                    key="notif-dropdown"
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                    variants={notifVariants}
+                    className="absolute right-0 mt-2 w-72 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded shadow-lg z-50 p-4"
+                  >
+                    <h4 className="font-bold mb-2 text-gray-900 dark:text-white">Notifications</h4>
+                    <ul className="space-y-2">
+                      {profileNotifications.length > 0 && profileNotifications.map((notif, i) => (
+                        <li key={i} className="text-sm text-gray-800 dark:text-gray-200">
+                          <span className="font-semibold text-cyan-600 dark:text-cyan-400">{notif.message}</span>
+                          <span className="block text-xs text-gray-400 mt-1">{new Date(notif.timestamp).toLocaleString()}</span>
+                        </li>
+                      ))}
+                      {newProducts.length > 0 && (
+                        <li className="text-sm text-gray-800 dark:text-gray-200">
+                          <span className="font-semibold text-cyan-600 dark:text-cyan-400 flex items-center gap-2">
+                            <svg className="h-5 w-5 text-cyan-500" fill="currentColor" viewBox="0 0 20 20"><path d="M10 2a8 8 0 100 16 8 8 0 000-16zm1 11H9v-2h2v2zm0-4H9V7h2v2z"/></svg>
+                            Nouveaux produits de vos vendeurs suivis :
+                          </span>
+                          <ul className="list-none ml-0 mt-2 space-y-2">
+                            {newProducts.map((prod, i) => (
+                              <li key={i} className="flex items-center gap-2 bg-cyan-50 dark:bg-cyan-900/30 rounded p-2">
+                                {prod.productImage && (
+                                  <img src={prod.productImage} alt={prod.productName} className="w-8 h-8 rounded object-cover border border-cyan-300" />
+                                )}
+                                <span>
+                                  <span className="font-bold text-cyan-700 dark:text-cyan-300">{prod.sellerName}</span>
+                                  {" "}a ajouté :{" "}
+                                  <span className="font-semibold">{prod.productName}</span>
+                                </span>
+                                <span className="ml-auto text-xs text-gray-400">{new Date(prod.timestamp).toLocaleString()}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </li>
+                      )}
+                      {newFavoriteProducts.length > 0 && (
+                        <li className="text-sm text-gray-800 dark:text-gray-200">
+                          <span className="font-semibold text-pink-600 dark:text-pink-400">Nouveaux articles favoris :</span>
+                          <ul className="list-disc ml-5 mt-1">
+                            {newFavoriteProducts.map((prod, i) => (
+                              <li key={i}>{prod.name || prod.id}</li>
+                            ))}
+                          </ul>
+                        </li>
+                      )}
+                      {profileNotifications.length === 0 && newProducts.length === 0 && newFavoriteProducts.length === 0 && (
+                        <li className="text-sm text-gray-500">Aucune notification.</li>
+                      )}
+                    </ul>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
             {user ? (
               <div className="flex items-center gap-2">
@@ -301,7 +327,7 @@ const Header = () => {
           </div>
         </div>
       )}
-    </header>
+    </motion.header>
   );
 };
 

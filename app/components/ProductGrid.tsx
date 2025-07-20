@@ -2,7 +2,7 @@
 
 import React from 'react';
 import ProductCard from './ProductCard';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 type Seller = {
   id: string;
@@ -39,6 +39,12 @@ const gridVariants = {
   hidden: {}
 };
 
+const gridItemVariants = {
+  hidden: { opacity: 0, scale: 0.96, y: 20 },
+  visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } },
+  exit: { opacity: 0, scale: 0.96, y: 20, transition: { duration: 0.2, ease: 'easeIn' } },
+};
+
 const ProductGrid = ({ products, title, compact, detailed }: ProductGridProps) => {
   return (
     <div className="py-8">
@@ -56,9 +62,20 @@ const ProductGrid = ({ products, title, compact, detailed }: ProductGridProps) =
           initial="hidden"
           animate="visible"
         >
-          {products.map((product, i) => (
-            <ProductCard key={product.id} product={product} detailed={!compact} />
-          ))}
+          <AnimatePresence>
+            {products.map((product, i) => (
+              <motion.div
+                key={product.id}
+                variants={gridItemVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                layout
+              >
+                <ProductCard product={product} detailed={!compact} />
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </motion.div>
         {products.length === 0 && (
           <div className="text-center py-10">
