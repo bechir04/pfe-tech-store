@@ -1,4 +1,6 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import ProductGrid from '../components/ProductGrid';
 import Link from 'next/link';
 
@@ -136,6 +138,27 @@ const products = [
 ];
 
 export default function ProductsPage() {
+  const [allProducts, setAllProducts] = useState(products);
+  const [allCategories, setAllCategories] = useState([
+    { id: "telephones", name: "Téléphones" },
+    { id: "accessoires", name: "Accessoires Multimédia" },
+    { id: "ordinateurs", name: "PC & Composants" }
+  ]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const adminProducts = JSON.parse(localStorage.getItem('adminProducts') || '[]');
+      setAllProducts([...products, ...adminProducts]);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const adminCategories = JSON.parse(localStorage.getItem('adminCategories') || '[]');
+      setAllCategories(prev => [...prev, ...adminCategories]);
+    }
+  }, []);
+
   return (
     <div>
       <div className="pb-6 mb-8 border-b border-gray-200 dark:border-gray-700">
@@ -147,28 +170,19 @@ export default function ProductsPage() {
           >
             Tous
           </Link>
-          <Link 
-            href="/produits/telephones"
-            className="bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-white hover:bg-blue-600 hover:text-white px-4 py-2 rounded-full text-sm font-medium transition-colors"
-          >
-            Téléphones
-          </Link>
-          <Link 
-            href="/produits/accessoires"
-            className="bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-white hover:bg-blue-600 hover:text-white px-4 py-2 rounded-full text-sm font-medium transition-colors"
-          >
-            Accessoires
-          </Link>
-          <Link 
-            href="/produits/ordinateurs"
-            className="bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-white hover:bg-blue-600 hover:text-white px-4 py-2 rounded-full text-sm font-medium transition-colors"
-          >
-            PC & Composants
-          </Link>
+          {allCategories.map(category => (
+            <Link 
+              key={category.id}
+              href={`/produits/${category.id}`}
+              className="bg-gray-200 text-gray-800 dark:bg-gray-700 dark:text-white hover:bg-blue-600 hover:text-white px-4 py-2 rounded-full text-sm font-medium transition-colors"
+            >
+              {category.name}
+            </Link>
+          ))}
         </div>
       </div>
 
-      <ProductGrid products={products} />
+      <ProductGrid products={allProducts} />
     </div>
   );
 }

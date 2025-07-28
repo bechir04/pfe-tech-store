@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 export default function AdminProducts() {
@@ -8,7 +8,7 @@ export default function AdminProducts() {
   const [searchTerm, setSearchTerm] = useState('');
 
   // Mock data
-  const [products] = useState([
+  const [products, setProducts] = useState([
     {
       id: '001',
       name: 'Smartphone Galaxy Pro',
@@ -47,11 +47,122 @@ export default function AdminProducts() {
     }
   ]);
 
+  // Add state for admin product form
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newProduct, setNewProduct] = useState({
+    name: '',
+    price: '',
+    category: '',
+    stock: '',
+    image: '',
+    description: '',
+  });
+
+  // Add state for editing, duplicating, and deleting products
+  const [editProduct, setEditProduct] = useState(null);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editForm, setEditForm] = useState({ name: '', price: '', category: '', stock: '', image: '', description: '' });
+  const [deleteProductId, setDeleteProductId] = useState(null);
+
+  // Load admin products from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem('adminProducts');
+    if (stored) {
+      setProducts(prev => [...prev, ...JSON.parse(stored)]);
+    }
+  }, []);
+
+  // Add product handler
+  function handleAddProduct(e) {
+    e.preventDefault();
+    const product = {
+      id: 'admin-' + Date.now(),
+      name: newProduct.name,
+      price: parseFloat(newProduct.price),
+      category: newProduct.category,
+      stock: parseInt(newProduct.stock),
+      image: newProduct.image,
+      description: newProduct.description,
+      status: 'active',
+      adminOnly: true,
+    };
+    setProducts(prev => [...prev, product]);
+    // Save to localStorage
+    const stored = localStorage.getItem('adminProducts');
+    const arr = stored ? JSON.parse(stored) : [];
+    arr.push(product);
+    localStorage.setItem('adminProducts', JSON.stringify(arr));
+    setShowAddForm(false);
+    setNewProduct({ name: '', price: '', category: '', stock: '', image: '', description: '' });
+  }
+
+  function handleEdit(product) {
+    setEditProduct(product);
+    setEditForm({
+      name: product.name,
+      price: product.price,
+      category: product.category,
+      stock: product.stock,
+      image: product.image,
+      description: product.description,
+    });
+    setShowEditForm(true);
+  }
+  function handleEditSubmit(e) {
+    e.preventDefault();
+    setProducts(prev => prev.map(p => p.id === editProduct.id ? { ...p, ...editForm, price: parseFloat(editForm.price), stock: parseInt(editForm.stock) } : p));
+    // Update localStorage
+    const stored = localStorage.getItem('adminProducts');
+    if (stored) {
+      let arr = JSON.parse(stored);
+      arr = arr.map((p) => p.id === editProduct.id ? { ...p, ...editForm, price: parseFloat(editForm.price), stock: parseInt(editForm.stock) } : p);
+      localStorage.setItem('adminProducts', JSON.stringify(arr));
+    }
+    setShowEditForm(false);
+    setEditProduct(null);
+  }
+  function handleDuplicate(product) {
+    const newProduct = { ...product, id: 'admin-' + Date.now(), name: product.name + ' (copie)' };
+    setProducts(prev => [...prev, newProduct]);
+    const stored = localStorage.getItem('adminProducts');
+    const arr = stored ? JSON.parse(stored) : [];
+    arr.push(newProduct);
+    localStorage.setItem('adminProducts', JSON.stringify(arr));
+  }
+  function handleDelete(productId) {
+    setProducts(prev => prev.filter(p => p.id !== productId));
+    const stored = localStorage.getItem('adminProducts');
+    if (stored) {
+      let arr = JSON.parse(stored);
+      arr = arr.filter((p) => p.id !== productId);
+      localStorage.setItem('adminProducts', JSON.stringify(arr));
+    }
+  }
+
   const [categories] = useState([
     { id: 'telephones', name: 'Téléphones', count: 45 },
     { id: 'ordinateurs', name: 'PC & Composants', count: 89 },
     { id: 'accessoires', name: 'Accessoires', count: 123 }
   ]);
+
+  const [showAddCategoryForm, setShowAddCategoryForm] = useState(false);
+  const [newCategory, setNewCategory] = useState({ name: '', description: '' });
+  const [adminCategories, setAdminCategories] = useState([]);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('adminCategories');
+      setAdminCategories(stored ? JSON.parse(stored) : []);
+    }
+  }, []);
+  function handleAddCategory(e) {
+    e.preventDefault();
+    const category = { id: Date.now().toString(), name: newCategory.name, description: newCategory.description };
+    const updated = [...adminCategories, category];
+    setAdminCategories(updated);
+    localStorage.setItem('adminCategories', JSON.stringify(updated));
+    setShowAddCategoryForm(false);
+    setNewCategory({ name: '', description: '' });
+  }
 
   const tabs = [
     { id: 'all', label: 'Tous les produits', count: products.length },
@@ -111,11 +222,88 @@ export default function AdminProducts() {
                 className="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-cyan-400"
               />
             </div>
-            <button className="bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors">
+            <button className="bg-cyan-600 hover:bg-cyan-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors" onClick={() => setShowAddForm(true)}>
               + Ajouter un produit
             </button>
           </div>
         </div>
+        {showAddForm && (
+          <div className="bg-gray-900 rounded-lg p-6 border border-gray-800 mb-6">
+            <h2 className="text-xl font-bold text-cyan-400 mb-4">Ajouter un produit</h2>
+            <form className="space-y-4" onSubmit={handleAddProduct}>
+              <div>
+                <label className="block text-gray-300 mb-1">Nom</label>
+                <input type="text" className="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100 border border-gray-700" value={newProduct.name} onChange={e => setNewProduct(p => ({ ...p, name: e.target.value }))} required />
+              </div>
+              <div>
+                <label className="block text-gray-300 mb-1">Prix</label>
+                <input type="number" step="0.01" className="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100 border border-gray-700" value={newProduct.price} onChange={e => setNewProduct(p => ({ ...p, price: e.target.value }))} required />
+              </div>
+              <div>
+                <label className="block text-gray-300 mb-1">Catégorie</label>
+                <input type="text" className="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100 border border-gray-700" value={newProduct.category} onChange={e => setNewProduct(p => ({ ...p, category: e.target.value }))} required />
+              </div>
+              <div>
+                <label className="block text-gray-300 mb-1">Stock</label>
+                <input type="number" className="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100 border border-gray-700" value={newProduct.stock} onChange={e => setNewProduct(p => ({ ...p, stock: e.target.value }))} required />
+              </div>
+              <div>
+                <label className="block text-gray-300 mb-1">Image (URL)</label>
+                <input type="text" className="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100 border border-gray-700" value={newProduct.image} onChange={e => setNewProduct(p => ({ ...p, image: e.target.value }))} required />
+              </div>
+              <div>
+                <label className="block text-gray-300 mb-1">Description</label>
+                <textarea className="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100 border border-gray-700" value={newProduct.description} onChange={e => setNewProduct(p => ({ ...p, description: e.target.value }))} required />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <button type="button" className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg" onClick={() => setShowAddForm(false)}>Annuler</button>
+                <button type="submit" className="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-lg">Ajouter</button>
+              </div>
+            </form>
+          </div>
+        )}
+        {showEditForm && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="bg-gray-950 rounded-xl shadow-2xl border border-gray-800 w-full max-w-md p-8 relative animate-fade-in">
+              <button
+                className="absolute top-4 right-4 text-gray-400 hover:text-cyan-400 text-2xl font-bold"
+                onClick={() => setShowEditForm(false)}
+                aria-label="Fermer"
+              >×</button>
+              <h2 className="text-2xl font-bold text-cyan-400 mb-4">Modifier le produit</h2>
+              <form className="space-y-4" onSubmit={handleEditSubmit}>
+                <div>
+                  <label className="block text-gray-300 mb-1">Nom</label>
+                  <input type="text" className="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100 border border-gray-700" value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} required />
+                </div>
+                <div>
+                  <label className="block text-gray-300 mb-1">Prix</label>
+                  <input type="number" step="0.01" className="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100 border border-gray-700" value={editForm.price} onChange={e => setEditForm(f => ({ ...f, price: e.target.value }))} required />
+                </div>
+                <div>
+                  <label className="block text-gray-300 mb-1">Catégorie</label>
+                  <input type="text" className="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100 border border-gray-700" value={editForm.category} onChange={e => setEditForm(f => ({ ...f, category: e.target.value }))} required />
+                </div>
+                <div>
+                  <label className="block text-gray-300 mb-1">Stock</label>
+                  <input type="number" className="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100 border border-gray-700" value={editForm.stock} onChange={e => setEditForm(f => ({ ...f, stock: e.target.value }))} required />
+                </div>
+                <div>
+                  <label className="block text-gray-300 mb-1">Image (URL)</label>
+                  <input type="text" className="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100 border border-gray-700" value={editForm.image} onChange={e => setEditForm(f => ({ ...f, image: e.target.value }))} required />
+                </div>
+                <div>
+                  <label className="block text-gray-300 mb-1">Description</label>
+                  <textarea className="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100 border border-gray-700" value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} required />
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <button type="button" className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg" onClick={() => setShowEditForm(false)}>Annuler</button>
+                  <button type="submit" className="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-lg">Enregistrer</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         {/* Tab Navigation */}
         <div className="flex space-x-1 mb-6 bg-gray-900 rounded-lg p-1 border border-gray-800 overflow-x-auto">
@@ -160,13 +348,13 @@ export default function AdminProducts() {
                 </div>
                 
                 <div className="flex space-x-2">
-                  <button className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white px-3 py-2 rounded text-sm transition-colors">
+                  <button className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white px-3 py-2 rounded text-sm transition-colors" onClick={() => handleEdit(product)}>
                     Modifier
                   </button>
-                  <button className="flex-1 bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-2 rounded text-sm transition-colors">
+                  <button className="flex-1 bg-gray-700 hover:bg-gray-600 text-gray-300 px-3 py-2 rounded text-sm transition-colors" onClick={() => handleDuplicate(product)}>
                     Dupliquer
                   </button>
-                  <button className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm transition-colors">
+                  <button className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm" onClick={() => handleDelete(product.id)}>
                     Supprimer
                   </button>
                 </div>
@@ -176,26 +364,40 @@ export default function AdminProducts() {
         </div>
 
         {/* Categories Section */}
-        <div className="mt-12">
-          <h2 className="text-2xl font-bold text-gray-100 mb-6">Catégories</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {categories.map((category) => (
-              <div key={category.id} className="bg-gray-900 rounded-lg p-6 border border-gray-800">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-100">{category.name}</h3>
-                  <span className="text-cyan-400 font-bold">{category.count}</span>
-                </div>
-                <div className="flex space-x-2">
-                  <button className="flex-1 bg-cyan-600 hover:bg-cyan-700 text-white px-3 py-2 rounded text-sm transition-colors">
-                    Modifier
-                  </button>
-                  <button className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded text-sm transition-colors">
-                    Supprimer
-                  </button>
-                </div>
+        <div className="flex justify-between items-center mb-4 mt-12">
+          <h2 className="text-2xl font-bold text-gray-100">Catégories</h2>
+          <button className="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-lg" onClick={() => setShowAddCategoryForm(true)}>
+            + Ajouter une catégorie
+          </button>
+        </div>
+        {showAddCategoryForm && (
+          <div className="bg-gray-900 rounded-lg p-6 border border-gray-800 mb-6">
+            <h2 className="text-xl font-bold text-cyan-400 mb-4">Ajouter une catégorie</h2>
+            <form className="space-y-4" onSubmit={handleAddCategory}>
+              <div>
+                <label className="block text-gray-300 mb-1">Nom</label>
+                <input type="text" className="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100 border border-gray-700" value={newCategory.name} onChange={e => setNewCategory(c => ({ ...c, name: e.target.value }))} required />
               </div>
-            ))}
+              <div>
+                <label className="block text-gray-300 mb-1">Description</label>
+                <textarea className="w-full px-4 py-2 rounded-lg bg-gray-800 text-gray-100 border border-gray-700" value={newCategory.description} onChange={e => setNewCategory(c => ({ ...c, description: e.target.value }))} required />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <button type="button" className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg" onClick={() => setShowAddCategoryForm(false)}>Annuler</button>
+                <button type="submit" className="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-lg">Ajouter</button>
+              </div>
+            </form>
           </div>
+        )}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {categories.concat(adminCategories).map((category) => (
+            <div key={category.id} className="bg-gray-900 rounded-lg p-6 border border-gray-800">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-gray-100">{category.name}</h3>
+              </div>
+              <div className="text-gray-400 mb-4">{category.description}</div>
+            </div>
+          ))}
         </div>
 
         {/* Inventory Alerts */}

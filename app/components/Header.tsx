@@ -9,13 +9,36 @@ import { AnimatePresence, motion } from 'framer-motion';
 
 const headerVariants = {
   hidden: { opacity: 0, y: -30 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    transition: { 
+      duration: 0.6, 
+      ease: [0.16, 1, 0.3, 1] as any // Using any to bypass the exact type check
+    } 
+  },
 };
 
 const notifVariants = {
   hidden: { opacity: 0, y: -10, scale: 0.98 },
-  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.3, ease: 'easeOut' } },
-  exit: { opacity: 0, y: -10, scale: 0.98, transition: { duration: 0.2, ease: 'easeIn' } },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    scale: 1, 
+    transition: { 
+      duration: 0.3, 
+      ease: [0.16, 1, 0.3, 1] as any 
+    } 
+  },
+  exit: { 
+    opacity: 0, 
+    y: -10, 
+    scale: 0.98, 
+    transition: { 
+      duration: 0.2, 
+      ease: [0.4, 0, 1, 1] as any 
+    } 
+  },
 };
 
 const Header = () => {
@@ -108,6 +131,78 @@ const Header = () => {
 
   console.log('Header user:', user);
 
+  // Mobile menu items
+  const MobileMenu = () => (
+    <div className="md:hidden fixed inset-0 bg-gray-900/95 z-20 pt-16 px-4 overflow-y-auto" style={{ display: mobileOpen ? 'block' : 'none' }}>
+      <div className="flex flex-col space-y-4 py-4">
+        {alwaysVisibleLinks.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className="px-4 py-3 text-lg font-medium text-gray-300 hover:bg-gray-800 rounded-lg transition-colors"
+            onClick={() => setMobileOpen(false)}
+          >
+            {link.label}
+          </Link>
+        ))}
+        {user && authOnlyLinks.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className="px-4 py-3 text-lg font-medium text-gray-300 hover:bg-gray-800 rounded-lg transition-colors"
+            onClick={() => setMobileOpen(false)}
+          >
+            {link.label}
+          </Link>
+        ))}
+        {user ? (
+          <>
+            <Link
+              href="/marketplace/post"
+              className="mt-4 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-bold text-center transition shadow"
+              onClick={() => setMobileOpen(false)}
+            >
+              Vendre un article
+            </Link>
+            <Link
+              href="/profile"
+              className="px-4 py-3 text-lg font-medium text-gray-300 hover:bg-gray-800 rounded-lg transition-colors"
+              onClick={() => setMobileOpen(false)}
+            >
+              Mon Profil
+            </Link>
+            <button
+              onClick={() => {
+                logout();
+                setMobileOpen(false);
+              }}
+              className="px-4 py-3 text-lg font-medium text-left text-red-400 hover:bg-gray-800 rounded-lg transition-colors"
+            >
+              Déconnexion
+            </button>
+          </>
+        ) : (
+          <div className="flex flex-col space-y-4 mt-4">
+            <Link
+              href="/login"
+              className="px-6 py-3 text-center font-medium text-white bg-cyan-600 hover:bg-cyan-700 rounded-lg transition-colors"
+              onClick={() => setMobileOpen(false)}
+            >
+              Connexion
+            </Link>
+            <Link
+              href="/signup"
+              className="px-6 py-3 text-center font-medium text-cyan-400 border border-cyan-400 hover:bg-cyan-900/30 rounded-lg transition-colors"
+              onClick={() => setMobileOpen(false)}
+            >
+              Inscription
+            </Link>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <motion.header
       className="bg-gray-950/90 backdrop-blur shadow-lg sticky top-0 z-30"
@@ -115,19 +210,39 @@ const Header = () => {
       initial="hidden"
       animate="visible"
     >
-      <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center h-20">
-          {/* Left: Logo */}
-          <Link href="/">
-            <div className="text-3xl font-extrabold text-cyan-400 flex items-center cursor-pointer tracking-tight">
-              <span className="mr-2">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-9 w-9" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-              </span>
-              TechStore
-            </div>
-          </Link>
+      {/* Mobile Menu */}
+      <MobileMenu />
+      
+      <div className="container mx-auto px-3 sm:px-4">
+        <div className="flex justify-between items-center h-16 sm:h-20">
+          {/* Mobile menu button */}
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="md:hidden p-2 rounded-md text-gray-300 hover:text-white hover:bg-gray-800 focus:outline-none"
+            aria-label="Menu"
+          >
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              {mobileOpen ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              )}
+            </svg>
+          </button>
+
+          {/* Logo - centered on mobile */}
+          <div className="flex-1 flex justify-center md:justify-start">
+            <Link href="/">
+              <div className="text-2xl sm:text-3xl font-extrabold text-cyan-400 flex items-center cursor-pointer tracking-tight">
+                <span className="mr-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-7 w-7 sm:h-9 sm:w-9" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </span>
+                <span className="hidden sm:inline">TechStore</span>
+              </div>
+            </Link>
+          </div>
 
           {/* Center: Carousel Nav */}
           <div className="hidden md:flex items-center gap-2 lg:gap-4 xl:gap-6 flex-1 justify-center">
@@ -305,23 +420,42 @@ const Header = () => {
               </Link>
             ))}
             {user && (
-              <Link href="/marketplace/post" className="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-full text-base font-bold transition shadow mt-2" onClick={() => setMobileOpen(false)}>
+              <Link 
+                href="/marketplace/post" 
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-full text-base font-bold transition shadow mt-2 block text-center" 
+                onClick={() => setMobileOpen(false)}
+              >
                 Vendre un article
               </Link>
             )}
             <div className="flex gap-2 mt-4">
               {user ? (
                 <button
-                  onClick={() => { logout(); setMobileOpen(false); }}
+                  onClick={() => { 
+                    logout(); 
+                    setMobileOpen(false); 
+                  }}
                   className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-full text-base font-bold transition w-full"
                 >
-                  Logout
+                  Déconnexion
                 </button>
               ) : (
-                <>
-                  <Link href="/auth/login" className="text-cyan-400 hover:underline font-bold text-base w-full text-center" onClick={() => setMobileOpen(false)}>Login</Link>
-                  <Link href="/auth/signup" className="text-cyan-400 hover:underline font-bold text-base w-full text-center" onClick={() => setMobileOpen(false)}>Sign Up</Link>
-                </>
+                <div className="w-full flex gap-2">
+                  <Link 
+                    href="/login" 
+                    className="flex-1 text-center bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-full font-medium transition"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    Connexion
+                  </Link>
+                  <Link 
+                    href="/signup" 
+                    className="flex-1 text-center border border-cyan-400 text-cyan-400 hover:bg-cyan-900/30 px-4 py-2 rounded-full font-medium transition"
+                    onClick={() => setMobileOpen(false)}
+                  >
+                    Inscription
+                  </Link>
+                </div>
               )}
             </div>
           </div>

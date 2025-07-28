@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useAdminAuth } from '../../context/AdminAuthContext';
 import jsPDF from 'jspdf';
@@ -111,6 +111,15 @@ const [editForm, setEditForm] = useState<{ name: string; email: string; role: 'u
 const [resetUser, setResetUser] = useState<AdminUserType | null>(null);
 const [showResetModal, setShowResetModal] = useState(false);
 
+// Add state for order details modal
+const [selectedOrder, setSelectedOrder] = useState(null);
+const [showOrderModal, setShowOrderModal] = useState(false);
+
+function handleViewOrder(order) {
+  setSelectedOrder(order);
+  setShowOrderModal(true);
+}
+
 const filteredUsers = useMemo(() => {
   return users.filter(u =>
     (filterStatus === 'all' || u.status === filterStatus) &&
@@ -127,6 +136,25 @@ const paginatedUsers = useMemo(() => {
 }, [filteredUsers, currentPage]);
 
 const totalPages = Math.ceil(filteredUsers.length / USERS_PER_PAGE);
+
+// Add state for maintenance mode
+const [maintenanceMode, setMaintenanceMode] = useState(false);
+
+// Load maintenance mode from localStorage on mount
+useEffect(() => {
+  const stored = localStorage.getItem('maintenanceMode');
+  setMaintenanceMode(stored === 'true');
+}, []);
+
+function handleMaintenanceToggle(e: React.ChangeEvent<HTMLInputElement>) {
+  setMaintenanceMode(e.target.checked);
+}
+
+function handleSaveSettings(e: React.FormEvent) {
+  e.preventDefault();
+  localStorage.setItem('maintenanceMode', maintenanceMode ? 'true' : 'false');
+  setNotification({ type: 'success', message: 'Paramètres sauvegardés.' });
+}
 
 // 2. Add types to all handler parameters
 function handleBanUnban(user: AdminUserType) {
@@ -233,7 +261,7 @@ const renderUserModal = () => selectedUser && (
     }
   ]);
 
-  const [pendingProducts] = useState([
+  const [pendingProducts, setPendingProducts] = useState([
     {
       id: 'u003',
       name: 'Souris Gaming RGB',
@@ -412,7 +440,6 @@ const renderUserModal = () => selectedUser && (
               <p className="text-sm text-gray-400">Ajouter, modifier, supprimer</p>
             </div>
           </Link>
-
           <Link href="/admin/orders" className="flex items-center p-4 bg-green-900/20 rounded-lg hover:bg-green-900/30 transition-colors">
             <div className="text-green-400 mr-3">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -424,8 +451,7 @@ const renderUserModal = () => selectedUser && (
               <p className="text-sm text-gray-400">Suivre et traiter</p>
             </div>
           </Link>
-
-          <Link href="/admin/users" className="flex items-center p-4 bg-blue-900/20 rounded-lg hover:bg-blue-900/30 transition-colors">
+          <button type="button" onClick={() => setActiveTab('users')} className="flex items-center p-4 bg-blue-900/20 rounded-lg hover:bg-blue-900/30 transition-colors w-full">
             <div className="text-blue-400 mr-3">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
@@ -435,9 +461,8 @@ const renderUserModal = () => selectedUser && (
               <p className="font-semibold text-gray-100">Gérer les utilisateurs</p>
               <p className="text-sm text-gray-400">Modérer et bannir</p>
             </div>
-          </Link>
-
-          <Link href="/admin/analytics" className="flex items-center p-4 bg-purple-900/20 rounded-lg hover:bg-purple-900/30 transition-colors">
+          </button>
+          <button type="button" onClick={() => setActiveTab('analytics')} className="flex items-center p-4 bg-purple-900/20 rounded-lg hover:bg-purple-900/30 transition-colors w-full">
             <div className="text-purple-400 mr-3">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -447,7 +472,7 @@ const renderUserModal = () => selectedUser && (
               <p className="font-semibold text-gray-100">Analytics</p>
               <p className="text-sm text-gray-400">Statistiques détaillées</p>
             </div>
-          </Link>
+          </button>
         </div>
       </div>
     </div>
@@ -486,7 +511,7 @@ const renderUserModal = () => selectedUser && (
                   </td>
                   <td className="py-3 text-gray-100">{order.date}</td>
                   <td className="py-3">
-                    <button className="text-cyan-400 hover:text-cyan-300 text-sm">Voir détails</button>
+                    <button className="text-cyan-400 hover:text-cyan-300 text-sm" onClick={() => handleViewOrder(order)}>Voir détails</button>
                   </td>
                 </tr>
               ))}
@@ -494,8 +519,41 @@ const renderUserModal = () => selectedUser && (
           </table>
         </div>
       </div>
+      {/* Order details modal */}
+      {showOrderModal && selectedOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-gray-950 rounded-xl shadow-2xl border border-gray-800 w-full max-w-md p-8 relative animate-fade-in">
+            <button
+              className="absolute top-4 right-4 text-gray-400 hover:text-cyan-400 text-2xl font-bold"
+              onClick={() => setShowOrderModal(false)}
+              aria-label="Fermer"
+            >×</button>
+            <h2 className="text-2xl font-bold text-cyan-400 mb-4">Détails de la commande</h2>
+            <div className="space-y-2 text-gray-200">
+              <div><span className="font-semibold">ID:</span> {selectedOrder.id}</div>
+              <div><span className="font-semibold">Client:</span> {selectedOrder.customer}</div>
+              <div><span className="font-semibold">Montant:</span> {selectedOrder.amount}€</div>
+              <div><span className="font-semibold">Statut:</span> <span className={selectedOrder.status === 'pending' ? 'text-yellow-400' : selectedOrder.status === 'shipped' ? 'text-blue-400' : 'text-green-400'}>{selectedOrder.status}</span></div>
+              <div><span className="font-semibold">Date:</span> {selectedOrder.date}</div>
+            </div>
+            <div className="mt-6 flex justify-end gap-2">
+              <button className="px-4 py-2 rounded bg-gray-700 text-gray-200 hover:bg-gray-600" onClick={() => setShowOrderModal(false)}>Fermer</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
+
+  // Add handlers for approve/reject
+  function handleApproveProduct(productId: string) {
+    setPendingProducts(prev => prev.filter(p => p.id !== productId));
+    setNotification({ type: 'success', message: 'Produit approuvé avec succès.' });
+  }
+  function handleRejectProduct(productId: string) {
+    setPendingProducts(prev => prev.filter(p => p.id !== productId));
+    setNotification({ type: 'info', message: 'Produit rejeté.' });
+  }
 
   const renderProducts = () => (
     <div className="space-y-6">
@@ -516,10 +574,10 @@ const renderUserModal = () => selectedUser && (
                   </div>
                 </div>
                 <div className="flex space-x-2">
-                  <button className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm">
+                  <button className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm" onClick={() => handleApproveProduct(product.id)}>
                     Approuver
                   </button>
-                  <button className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm">
+                  <button className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm" onClick={() => handleRejectProduct(product.id)}>
                     Rejeter
                   </button>
                 </div>
@@ -1136,7 +1194,7 @@ const renderUserModal = () => selectedUser && (
     <div className="space-y-6">
       <div className="bg-gray-900 rounded-lg p-6 border border-gray-800">
         <h3 className="text-lg font-bold mb-4 text-gray-100">Paramètres administrateur</h3>
-        <div className="space-y-4">
+        <form className="space-y-4" onSubmit={handleSaveSettings}>
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">Nom du site</label>
             <input
@@ -1159,18 +1217,18 @@ const renderUserModal = () => selectedUser && (
             <label className="block text-sm font-medium text-gray-300 mb-2">Mode maintenance</label>
             <div className="flex items-center space-x-4">
               <label className="flex items-center">
-                <input type="checkbox" className="mr-2" />
+                <input type="checkbox" className="mr-2" checked={maintenanceMode} onChange={handleMaintenanceToggle} />
                 <span className="text-gray-100">Activer le mode maintenance</span>
               </label>
             </div>
           </div>
           
           <div className="pt-4">
-            <button className="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-lg">
+            <button type="submit" className="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded-lg">
               Sauvegarder les paramètres
             </button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   );

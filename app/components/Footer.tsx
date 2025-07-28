@@ -4,7 +4,14 @@ import { motion } from 'framer-motion';
 
 const footerVariants = {
   hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: 'easeOut' } },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    transition: { 
+      duration: 0.7, 
+      ease: [0.16, 1, 0.3, 1] as any 
+    } 
+  },
 };
 
 const Footer = () => {
@@ -15,14 +22,14 @@ const Footer = () => {
       initial="hidden"
       animate="visible"
     >
-      <div className="container mx-auto px-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div>
+      <div className="container mx-auto px-4 sm:px-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="mt-8 sm:mt-0">
             <h3 className="text-xl font-bold mb-4 text-blue-400">TechStore</h3>
             <p className="text-gray-400 mb-4">
               Votre boutique de référence pour tous vos besoins en matériel informatique et high-tech.
             </p>
-            <div className="flex space-x-4">
+            <div className="flex justify-center sm:justify-start space-x-4 mt-4">
               <a href="#" className="text-gray-400 hover:text-white">
                 <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
@@ -41,7 +48,7 @@ const Footer = () => {
             </div>
           </div>
           
-          <div>
+          <div className="mt-8 sm:mt-0">
             <h3 className="text-lg font-bold mb-4">Catégories</h3>
             <ul className="space-y-2">
               <li>
@@ -62,7 +69,7 @@ const Footer = () => {
             </ul>
           </div>
           
-          <div>
+          <div className="mt-8 sm:mt-0">
             <h3 className="text-lg font-bold mb-4">Support</h3>
             <ul className="space-y-2">
               <li>
@@ -88,7 +95,7 @@ const Footer = () => {
             </ul>
           </div>
           
-          <div>
+          <div className="mt-8 sm:mt-0">
             <h3 className="text-lg font-bold mb-4">Contact</h3>
             <ul className="space-y-2 text-gray-400">
               <li className="flex items-start">
@@ -114,10 +121,26 @@ const Footer = () => {
           </div>
         </div>
         
-        <div className="border-t border-gray-800 mt-8 pt-6">
+        <div className="border-t border-gray-800 mt-10 pt-6">
           <p className="text-sm text-gray-400 text-center">
             © {new Date().getFullYear()} TechStore. Tous droits réservés.
           </p>
+          <div className="flex justify-center space-x-6 mt-4">
+            <a href="#" className="text-gray-400 hover:text-white">
+              <span className="sr-only">Mentions légales</span>
+              <span className="text-sm">Mentions légales</span>
+            </a>
+            <span className="text-gray-600">•</span>
+            <a href="#" className="text-gray-400 hover:text-white">
+              <span className="sr-only">Politique de confidentialité</span>
+              <span className="text-sm">Confidentialité</span>
+            </a>
+            <span className="text-gray-600">•</span>
+            <a href="#" className="text-gray-400 hover:text-white">
+              <span className="sr-only">Conditions générales</span>
+              <span className="text-sm">CGV</span>
+            </a>
+          </div>
         </div>
       </div>
     </motion.footer>

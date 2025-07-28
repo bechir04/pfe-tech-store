@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import ProductGrid from "../components/ProductGrid";
 import { useAuth } from "../context/AuthContext";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from 'framer-motion';
 
 const featuredProducts = [
@@ -89,6 +89,18 @@ const headingVariants = {
 
 export default function Home() {
   const { user } = useAuth();
+  const [allFeaturedProducts, setAllFeaturedProducts] = useState(featuredProducts);
+  const [allCategories, setAllCategories] = useState(categories);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const adminProducts = JSON.parse(localStorage.getItem('adminProducts') || '[]');
+      setAllFeaturedProducts([...featuredProducts, ...adminProducts]);
+      const adminCategories = JSON.parse(localStorage.getItem('adminCategories') || '[]');
+      setAllCategories([...categories, ...adminCategories]);
+    }
+  }, []);
+
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 space-y-12 bg-gray-950 min-h-screen">
       {/* Hero Section */}
@@ -153,7 +165,7 @@ export default function Home() {
           Nos Catégories
         </motion.h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {categories.map((category, i) => (
+          {allCategories.map((category, i) => (
             <motion.div
               key={category.id}
               whileHover={{ scale: 1.07, boxShadow: '0 0 16px #0ff' }}
@@ -195,7 +207,7 @@ export default function Home() {
             </svg>
           </Link>
         </div>
-        <ProductGrid products={featuredProducts} />
+        <ProductGrid products={allFeaturedProducts} />
       </motion.section>
 
       {/* Advantages Section */}

@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface Category {
   id: string;
@@ -14,6 +14,14 @@ export default function AdminCategories() {
     { id: '3', name: 'Accessoires', description: 'Accessoires Multimédia' }
   ]);
   
+  // Load admin categories from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem('adminCategories');
+    if (stored) {
+      setCategories(prev => [...prev, ...JSON.parse(stored)]);
+    }
+  }, []);
+
   const [showForm, setShowForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState({ name: '', description: '' });
@@ -28,6 +36,11 @@ export default function AdminCategories() {
           ? { ...c, name: formData.name, description: formData.description }
           : c
       ));
+      // Save to localStorage
+      const stored = localStorage.getItem('adminCategories');
+      let arr = stored ? JSON.parse(stored) : [];
+      arr = arr.map((c: any) => c.id === editingCategory.id ? { ...c, name: formData.name, description: formData.description } : c);
+      localStorage.setItem('adminCategories', JSON.stringify(arr));
     } else {
       // Add new category
       const newCategory: Category = {
@@ -36,6 +49,11 @@ export default function AdminCategories() {
         description: formData.description
       };
       setCategories([...categories, newCategory]);
+      // Save to localStorage
+      const stored = localStorage.getItem('adminCategories');
+      const arr = stored ? JSON.parse(stored) : [];
+      arr.push(newCategory);
+      localStorage.setItem('adminCategories', JSON.stringify(arr));
     }
     setShowForm(false);
     setEditingCategory(null);

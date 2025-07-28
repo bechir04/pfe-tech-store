@@ -162,7 +162,10 @@ function getProductById(id: string, category: string) {
   // 2. Check localStorage (if running in browser)
   if (typeof window !== "undefined") {
     const userProducts = JSON.parse(localStorage.getItem("userProducts") || "[]");
+    const adminProducts = JSON.parse(localStorage.getItem("adminProducts") || "[]");
     product = userProducts.find((p: any) => p.id === id && p.category === category);
+    if (product) return product;
+    product = adminProducts.find((p: any) => p.id === id && p.category === category);
     if (product) return product;
   }
   return null;
